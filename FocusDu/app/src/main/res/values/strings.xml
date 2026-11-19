@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">专注有度</string>
+
+    <!-- ============================================================
+         页面标题（P01–P14，对应 docs/页面清单.md）
+         所有面向用户的文案统一放这里，禁止在代码里写死中文 —— R2（T5-01）只改这个文件
+         ============================================================ -->
+    <string name="p01_title">欢迎使用</string>
+    <string name="p02_title">固定机位引导</string>
+    <string name="p03_title">坐姿校准</string>
+    <string name="p04_title">校准完成</string>
+    <string name="p05_title">今日概览</string>
+    <string name="p06_title">番茄钟</string>
+    <string name="p07_title">实时状态</string>
+    <string name="p08_title">提醒中心</string>
+    <string name="p09_title">休息一下</string>
+    <string name="p10_title">专注守护</string>
+    <string name="p11_title">提醒人格与主题</string>
+    <string name="p12_title">本轮报告</string>
+    <string name="p13_title">历史趋势</string>
+    <string name="p14_title">前后对比</string>
+
+    <!-- 通用按钮 -->
+    <string name="btn_start">开始</string>
+    <string name="btn_pause">暂停</string>
+    <string name="btn_resume">继续</string>
+    <string name="btn_give_up">放弃本轮</string>
+    <string name="btn_generate_report">生成本轮报告</string>
+
+    <!-- 占位提示（骨架期展示，各负责人实现后替换） -->
+    <string name="tpl_todo_prefix">本页为骨架模板，</string>
+</resources>

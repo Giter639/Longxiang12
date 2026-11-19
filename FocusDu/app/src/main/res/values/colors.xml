@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="focusdu_primary">#2E7D6B</color>
+    <color name="focusdu_primary_dark">#1B4D42</color>
+    <color name="focusdu_on_primary">#FFFFFF</color>
+    <color name="focusdu_surface">#F6F8F7</color>
+    <color name="focusdu_text_hint">#8A9A94</color>
+    <color name="focusdu_warning">#C65A1E</color>
+    <color name="focusdu_danger">#B3261E</color>
+    <color name="focusdu_ok">#2E7D6B</color>
+    <color name="ic_launcher_background">#2E7D6B</color>
+</resources>

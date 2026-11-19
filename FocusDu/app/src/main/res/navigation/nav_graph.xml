@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- X02 页面框架：单 Activity + Fragment 导航
+     新增页面三步：1) ui/pages 下新建 Fragment（可复制模板） 2) strings.xml 加标题 3) 这里加一个 destination -->
+<navigation xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/nav_graph"
+    app:startDestination="@id/p05HomePage">
+
+    <!-- P01–P04 引导与校准链（R2 文案 / R3 采集 / R4 基线） -->
+    <fragment
+        android:id="@+id/p01GuidePage"
+        android:name="com.focusdu.app.ui.pages.P01GuidePage"
+        android:label="@string/p01_title" />
+    <fragment
+        android:id="@+id/p02PositioningPage"
+        android:name="com.focusdu.app.ui.pages.P02PositioningPage"
+        android:label="@string/p02_title" />
+    <fragment
+        android:id="@+id/p03CalibrationPage"
+        android:name="com.focusdu.app.ui.pages.P03CalibrationPage"
+        android:label="@string/p03_title" />
+    <fragment
+        android:id="@+id/p04BaselinePage"
+        android:name="com.focusdu.app.ui.pages.P04BaselinePage"
+        android:label="@string/p04_title" />
+
+    <!-- P05–P07 主链路：概览 / 番茄钟 / 实时状态（R1 主战场） -->
+    <fragment
+        android:id="@+id/p05HomePage"
+        android:name="com.focusdu.app.ui.pages.P05HomePage"
+        android:label="@string/p05_title" />
+    <fragment
+        android:id="@+id/p06PomodoroPage"
+        android:name="com.focusdu.app.ui.pages.P06PomodoroPage"
+        android:label="@string/p06_title" />
+    <fragment
+        android:id="@+id/p07VisionMonitorPage"
+        android:name="com.focusdu.app.ui.pages.P07VisionMonitorPage"
+        android:label="@string/p07_title" />
+
+    <!-- P08–P11 提醒 / 休息 / 守护 / 人格设置 -->
+    <fragment
+        android:id="@+id/p08ReminderCenterPage"
+        android:name="com.focusdu.app.ui.pages.P08ReminderCenterPage"
+        android:label="@string/p08_title" />
+    <fragment
+        android:id="@+id/p09RestPage"
+        android:name="com.focusdu.app.ui.pages.P09RestPage"
+        android:label="@string/p09_title" />
+    <fragment
+        android:id="@+id/p10GuardInterceptPage"
+        android:name="com.focusdu.app.ui.pages.P10GuardInterceptPage"
+        android:label="@string/p10_title" />
+    <fragment
+        android:id="@+id/p11PersonaThemePage"
+        android:name="com.focusdu.app.ui.pages.P11PersonaThemePage"
+        android:label="@string/p11_title" />
+
+    <!-- P12–P14 报告 / 趋势 / 对比 -->
+    <fragment
+        android:id="@+id/p12RoundReportPage"
+        android:name="com.focusdu.app.ui.pages.P12RoundReportPage"
+        android:label="@string/p12_title" />
+    <fragment
+        android:id="@+id/p13HistoryTrendPage"
+        android:name="com.focusdu.app.ui.pages.P13HistoryTrendPage"
+        android:label="@string/p13_title" />
+    <fragment
+        android:id="@+id/p14ComparisonPage"
+        android:name="com.focusdu.app.ui.pages.P14ComparisonPage"
+        android:label="@string/p14_title" />
+</navigation>
