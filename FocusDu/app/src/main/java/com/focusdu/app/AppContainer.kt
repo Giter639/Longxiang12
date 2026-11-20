@@ -11,7 +11,10 @@ import com.focusdu.app.pomodoro.RoomPomodoroStore
 import com.focusdu.app.reminder.ReminderEngine
 import com.focusdu.app.reminder.RiskEventWire
 import com.focusdu.app.report.ReportGenerator
+import com.focusdu.app.report.RestValidator
 import com.focusdu.app.track.RoomTracker
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.map
 
 import com.focusdu.app.vision.BaselineStore
 import com.focusdu.app.vision.CameraStreamer
@@ -58,6 +61,7 @@ class AppContainer(context: Context) {
     private val spanLogger = StateSpanLogger(clock, tracker, pomodoroEngine.state, debouncer.ui)
     private val riskWire = RiskEventWire(clock, reminderEngine, pomodoroEngine, debouncer.ui, pomodoroEngine.state)
     private val sampleRecorder = VisionSampleRecorder(db, pomodoroEngine.state)
+    val restValidator = RestValidator(clock, tracker)
 
     fun onAppReady() {
         tracker.sessionBinder = { pomodoroEngine.state.value.sessionId }   // 埋点自动归入当前会话
@@ -67,5 +71,17 @@ class AppContainer(context: Context) {
         appScope.launch { visionEngine.samples().collect { sampleRecorder.onSample(it) } }   // 采样落盘
         spanLogger.start(appScope)
         riskWire.start(appScope)
+        // T3-04 休息恢复校验：观察相位变化 + 实时状态流
+        appScope.launch {
+            pomodoroEngine.state
+                .map { it.phase to it.sessionId }
+                .distinctUntilChanged()
+                .collect { (phase, sid) -> restValidator.onPhase(phase, sid) }
+        }
+        appScope.launch {
+            debouncer.ui.collect { u ->
+                (u as? StateStreamDebouncer.UiState.Live)?.let { restValidator.onVisionState(it.state) }
+            }
+        }
     }
 }

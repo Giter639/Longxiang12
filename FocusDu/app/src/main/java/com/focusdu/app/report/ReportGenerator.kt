@@ -69,6 +69,8 @@ class ReportGenerator(
         }
         appendLine("休息：共 ${fmtMin(m.breakMs)}，有效休息 ${m.effectiveRestCount} 次（累计 ${fmtMin(m.effectiveRestMs)}）")
         appendLine("数据可信度：样本 ${m.sampleCount}/${m.expectedSamples}，完整度 ${(m.completeness * 100).roundToInt()}%")
+        val tips = ReportAdvisor.advise(m)
+        appendLine("下一步建议：${tips.joinToString("；") { it }}")
         if (m.missingDataFlags.isNotEmpty()) {
             appendLine("缺失项：${m.missingDataFlags.joinToString("、")}")
         }

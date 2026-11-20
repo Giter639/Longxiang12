@@ -49,6 +49,10 @@ class AppSessionViewModel(private val container: AppContainer) : ViewModel() {
     fun setDefer(enabled: Boolean) { container.reminderEngine.deferMode = enabled }
     fun drainDeferredForRest() = container.reminderEngine.drainDeferredForRest()
 
+    // ---- 休息恢复校验（T3-04） ----
+    fun restCheck() = container.restValidator.lastCheck()
+    fun currentAwayMs() = container.restValidator.currentAwayMs()
+
     // ---- 报告（T6-01/02/03） ----
     suspend fun generateReport(): ReportEntity? {
         val sessionId = container.pomodoroStore.recentSessions(1).firstOrNull()?.sessionId ?: return null

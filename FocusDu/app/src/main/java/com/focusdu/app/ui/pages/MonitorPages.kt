@@ -1,5 +1,8 @@
 package com.focusdu.app.ui.pages
 
+import android.graphics.Color
+import android.view.Gravity
+import android.widget.TextView
 import androidx.lifecycle.lifecycleScope
 import com.focusdu.app.R
 import com.focusdu.app.databinding.FragmentPageBinding
@@ -7,15 +10,23 @@ import com.focusdu.app.pomodoro.Phase
 import com.focusdu.app.pomodoro.PomodoroMode
 import com.focusdu.app.reminder.ReminderAction
 import com.focusdu.app.ui.common.BasePageFragment
+import com.focusdu.app.ui.common.RingCountdownView
+import com.focusdu.app.ui.common.TrendLineChart
 import com.focusdu.app.vision.StateStreamDebouncer
 import kotlinx.coroutines.launch
+import android.os.Handler
+import android.os.Looper
 
-/** P06 番茄钟 —— R1（T3-01 三模式 / T3-02 计时恢复，验收：三模式可启动、息屏恢复误差<2s） */
+/** P06 番茄钟 —— R1（T3-01 三模式 / T3-02 计时恢复）：环形倒计时 + 提醒边缘横幅 */
 class P06PomodoroPage : BasePageFragment() {
     override val ownerTag = "R1 T3-01/T3-02 · 引擎+前台服务已接通（Mock 数据驱动）"
-    override val hintText = "TODO：把占位按钮换成环形倒计时与模式卡片；息屏续计已由引擎+前台服务实现，恢复逻辑在 PomodoroEngine.recoverIfPossible。"
+    override val hintText = "环形倒计时显示剩余进度；持续风险触发提醒时顶部横幅边缘提示（冷却/压制规则在引擎内，验收有单测）。"
 
     private var pauseResumeBtn: com.google.android.material.button.MaterialButton? = null
+    private var ring: RingCountdownView? = null
+    private var banner: TextView? = null
+    private var reminderCountAtStart = 0
+    private val handler = Handler(Looper.getMainLooper())
 
     override fun onPageReady(view: android.view.View) {
         addButton("开始 · 标准 25/5") { vm.startPomodoro(PomodoroMode.STANDARD) }
@@ -24,17 +35,65 @@ class P06PomodoroPage : BasePageFragment() {
         pauseResumeBtn = addButton("暂停") { togglePause() }
         addButton("放弃本轮 / 跳过休息") { vm.giveUp() }
 
+        // 环形倒计时
+        ring = RingCountdownView(requireContext()).apply {
+            layoutParams = android.widget.LinearLayout.LayoutParams(
+                android.widget.LinearLayout.LayoutParams.MATCH_PARENT, 640
+            )
+        }
+        binding.pageBody.addView(ring, 0)
+
+        // 提醒边缘横幅（REMIND 决策到达时显示 4 秒）
+        banner = TextView(requireContext()).apply {
+            setPadding(24, 20, 24, 20)
+            setBackgroundColor(Color.parseColor("#FDEBD0"))
+            setTextColor(Color.parseColor("#8C4A0F"))
+            textSize = 14f
+            gravity = Gravity.CENTER
+            visibility = android.view.View.GONE
+            layoutParams = android.widget.LinearLayout.LayoutParams(
+                android.widget.LinearLayout.LayoutParams.MATCH_PARENT,
+                android.widget.LinearLayout.LayoutParams.WRAP_CONTENT,
+            ).apply { bottomMargin = 24 }
+        }
+        binding.pageBody.addView(banner, 0)
+        reminderCountAtStart = vm.reminders.value.size
+
         viewLifecycleOwner.lifecycleScope.launch {
             vm.pomodoro.collect { s ->
-                binding.pageStatus.text = when (s.phase) {
-                    Phase.IDLE -> "未开始 · 选择一种模式"
-                    Phase.FOCUS -> "第 ${s.roundIndex} 轮 ${s.mode?.label} 专注 · 剩余 ${fmt(s.focusRemainingMs)}" +
-                            if (s.earlyBreakTriggered) "（已提前休息，下轮自动缩短）" else ""
-                    Phase.FOCUS_PAUSED -> "已暂停 · 已专注 ${fmt(s.focusElapsedMs)}"
-                    Phase.BREAK -> "休息 · 剩余 ${fmt(s.breakRemainingMs)}"
-                    Phase.FINISHED -> "本轮完成 · 去看报告"
+                ring?.let { r ->
+                    when (s.phase) {
+                        Phase.FOCUS -> r.update(
+                            s.focusRemainingMs.toFloat() / s.focusTargetMs.coerceAtLeast(1),
+                            fmt(s.focusRemainingMs), "专注中 · 第 ${s.roundIndex} 轮", 0xFF2E7D6B.toInt(),
+                        )
+                        Phase.FOCUS_PAUSED -> r.update(
+                            s.focusRemainingMs.toFloat() / s.focusTargetMs.coerceAtLeast(1),
+                            fmt(s.focusRemainingMs), "已暂停", 0xFFC65A1E.toInt(),
+                        )
+                        Phase.BREAK -> r.update(
+                            s.breakRemainingMs.toFloat() / s.breakTargetMs.coerceAtLeast(1),
+                            fmt(s.breakRemainingMs), "休息中" + if (s.earlyBreakTriggered) "（已提前）" else "", 0xFF3B7EA1.toInt(),
+                        )
+                        Phase.FINISHED -> r.update(0f, "完成", "本轮结束", 0xFF2E7D6B.toInt())
+                        Phase.IDLE -> r.update(1f, "--:--", "选择一种模式开始", 0xFF8A9A94.toInt())
+                    }
                 }
                 pauseResumeBtn?.text = if (s.phase == Phase.FOCUS_PAUSED) "继续" else "暂停"
+            }
+        }
+
+        viewLifecycleOwner.lifecycleScope.launch {
+            vm.reminders.collect { list ->
+                // 只对本页打开后新出现的提醒弹横幅（历史决策不打扰）
+                if (list.size > reminderCountAtStart) {
+                    val last = list.lastOrNull() ?: return@collect
+                    if (last.action == ReminderAction.REMIND) {
+                        banner?.text = "⚠ ${last.event.type}（${last.event.level}）持续风险，请调整姿势或起身"
+                        banner?.visibility = android.view.View.VISIBLE
+                        handler.postDelayed({ banner?.visibility = android.view.View.GONE }, 4000)
+                    }
+                }
             }
         }
     }
@@ -112,10 +171,10 @@ class P08ReminderCenterPage : BasePageFragment() {
     }
 }
 
-/** P09 休息页 —— R1（T3-04，验收：休息结束自动写入报告）；R4 恢复判定（T2-03） */
+/** P09 休息页 —— R1（T3-04，验收：休息结束自动写入报告）+ 恢复校验结果展示 */
 class P09RestPage : BasePageFragment() {
     override val ownerTag = "R1 休息页 T3-04 · R4 恢复识别 T2-03"
-    override val hintText = "TODO：休息倒计时大屏 + 起身引导 + 回来后的恢复校验展示（距离/姿态是否恢复）。延后消息摘要由 drainDeferredForRest 取。"
+    override val hintText = "休息期间自动统计离开屏幕时长；休息结束时恢复校验结论展示在这里，并自动写入本轮报告（REST_VALIDATED）。"
 
     override fun onPageReady(view: android.view.View) {
         addButton("查看延后消息摘要") {
@@ -127,11 +186,18 @@ class P09RestPage : BasePageFragment() {
 
         viewLifecycleOwner.lifecycleScope.launch {
             vm.pomodoro.collect { s ->
-                if (s.phase == Phase.BREAK) {
-                    val t = s.breakRemainingMs / 1000
-                    binding.pageStatus.text = "休息中 · 剩余 %02d:%02d · 建议起身远眺".format(t / 60, t % 60)
-                } else {
-                    binding.pageStatus.text = "休息页仅在番茄休息阶段生效（当前：${s.phase}）"
+                when (s.phase) {
+                    Phase.BREAK -> {
+                        val t = s.breakRemainingMs / 1000
+                        val away = vm.currentAwayMs() / 1000
+                        binding.pageStatus.text =
+                            "休息中 · 剩余 %02d:%02d\n已离开屏幕 $away 秒（≥60 秒算有效休息）\n建议起身远眺".format(t / 60, t % 60)
+                    }
+                    Phase.FINISHED -> {
+                        val check = vm.restCheck()
+                        binding.pageStatus.text = check?.summary ?: "本轮结束"
+                    }
+                    else -> binding.pageStatus.text = "休息页仅在番茄休息阶段生效（当前：${s.phase}）；休息结束后的恢复校验结论也会展示在这里"
                 }
             }
         }

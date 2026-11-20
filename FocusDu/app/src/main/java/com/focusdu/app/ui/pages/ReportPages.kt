@@ -5,6 +5,7 @@ import com.focusdu.app.R
 import com.focusdu.app.databinding.FragmentPageBinding
 import com.focusdu.app.report.HistoryComparator
 import com.focusdu.app.ui.common.BasePageFragment
+import com.focusdu.app.ui.common.TrendLineChart
 import kotlinx.coroutines.launch
 
 /**
@@ -30,19 +31,45 @@ class P12RoundReportPage : BasePageFragment() {
     }
 }
 
-/** P13 历史趋势 —— R1 存储（T7-03 离线可用） */
+/** P13 历史趋势 —— R1 存储（T7-03 离线可用）：近 7 次折线（有效学习时长 / 风险率），零依赖自绘 */
 class P13HistoryTrendPage : BasePageFragment() {
     override val ownerTag = "R1 存储 T7-03 · 报告全本地不上传"
-    override val hintText = "TODO：近 7 次有效学习时长/风险率折线图（MPAndroidChart 或自绘）；样本不足时只展示点图。"
+    override val hintText = "绿线=有效学习时长（分），橙线=高风险占比（%）。数据来自本地报告历史；样本不足 2 轮时显示提示。"
 
     override fun onPageReady(view: android.view.View) {
-        viewLifecycleOwner.lifecycleScope.launch {
-            val reports = vm.recentReports(7).sortedBy { it.generatedAtWall }
-            binding.pageStatus.text = if (reports.isEmpty()) "还没有历史报告"
-            else reports.joinToString("\n") { r ->
-                "轮次 ${r.sessionId}: 专注 ${r.focusMs / 60000}分 · 有效 ${r.effectiveMs / 60000}分 · 风险率 ${(r.riskRate * 100).toInt()}%"
+        val chart = TrendLineChart(requireContext())
+        chart.layoutParams = android.widget.LinearLayout.LayoutParams(
+            android.widget.LinearLayout.LayoutParams.MATCH_PARENT, 620
+        )
+        binding.pageBody.addView(chart, 0)
+
+        fun refresh() {
+            viewLifecycleOwner.lifecycleScope.launch {
+                val reports = vm.recentReports(7).sortedBy { it.generatedAtWall }
+                if (reports.size < 2) {
+                    chart.setData(emptyList())
+                    binding.pageStatus.text = "完成至少 2 轮番茄后显示趋势（当前 ${reports.size} 轮）"
+                } else {
+                    chart.setData(
+                        listOf(
+                            TrendLineChart.Series(
+                                "有效学习(分)",
+                                reports.map { it.effectiveMs / 60000f },
+                                { "${it.toInt()}分" },
+                            ),
+                            TrendLineChart.Series(
+                                "高风险(%)",
+                                reports.map { (it.riskRate * 100).toFloat() },
+                                { "${it.toInt()}%" },
+                            ),
+                        )
+                    )
+                    binding.pageStatus.text = "近 ${reports.size} 轮趋势（时间从左到右）"
+                }
             }
         }
+        addButton("刷新趋势") { refresh() }
+        refresh()
     }
 }
 
