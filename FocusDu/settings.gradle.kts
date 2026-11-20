@@ -1,9 +1,10 @@
 // 专注有度 · 骨架工程（X02 客户端架构与页面框架）
 // CI 环境（GitHub Actions 自动注入 CI=true）直连官方源——runner 访问阿里云会超时导致解析失败；
 // 本地（国内网络）保持阿里云镜像优先，官方源兜底。
-val isCi = System.getenv("CI") != null
+// 注意：pluginManagement 在 Kotlin DSL 中独立求值，isCi 需在块内各自声明。
 
 pluginManagement {
+    val isCi = System.getenv("CI") != null
     repositories {
         if (isCi) {
             google()
@@ -21,6 +22,7 @@ pluginManagement {
 }
 
 dependencyResolutionManagement {
+    val isCi = System.getenv("CI") != null
     repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
     repositories {
         if (isCi) {
