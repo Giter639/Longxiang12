@@ -61,6 +61,20 @@ class AppSessionViewModel(private val container: AppContainer) : ViewModel() {
 
     suspend fun latestReport(): ReportEntity? = container.reportGenerator.latest()
     suspend fun recentReports(n: Int): List<ReportEntity> = container.reportGenerator.recent(n)
+    suspend fun reportSections(sessionId: Long) = container.reportGenerator.buildSections(sessionId)
+
+    /** P05 今日概览：今天的轮数 / 总专注 / 平均风险率 */
+    data class TodaySummary(val rounds: Int, val focusMs: Long, val avgRiskRate: Double)
+
+    suspend fun todaySummary(): TodaySummary {
+        val today = container.reportGenerator.recent(30).filter { it.generatedAtWall >= calendarDayStart() }
+        val risk = today.map { it.riskRate }.filter { it > 0 }
+        return TodaySummary(
+            rounds = today.size,
+            focusMs = today.sumOf { it.focusMs },
+            avgRiskRate = if (risk.isNotEmpty()) risk.average() else 0.0,
+        )
+    }
 
     // ---- 基线（T1-04 对接位） ----
     suspend fun currentBaseline(): PersonalBaseline? = container.baselineStore.current()

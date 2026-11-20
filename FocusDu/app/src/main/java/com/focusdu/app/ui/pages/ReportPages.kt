@@ -1,5 +1,7 @@
 package com.focusdu.app.ui.pages
 
+import android.graphics.Color
+import android.widget.TextView
 import androidx.lifecycle.lifecycleScope
 import com.focusdu.app.R
 import com.focusdu.app.databinding.FragmentPageBinding
@@ -12,10 +14,10 @@ import kotlinx.coroutines.launch
  * P12–P14：报告与对比。数据全部来自 Room 埋点重算（口径见 MetricDefs，D5 前与 R2 定稿）。
  */
 
-/** P12 本轮报告 —— R1（T6-01 结束 3s 内出报告 / T6-02 指标引擎） */
+/** P12 本轮报告 —— R1（T6-01 结束 3s 内出报告 / T6-02 指标引擎）：按 docx 七区块卡片化 */
 class P12RoundReportPage : BasePageFragment() {
     override val ownerTag = "R1 报告 T6-01/T6-02 · 口径 DRAFT_v0.1 待 R2 定稿"
-    override val hintText = "TODO：报告卡片式排版（摘要/风险构成/干预效果/休息恢复/可信度/下一步建议）。summaryText 为骨架期占位。"
+    override val hintText = "按 docx 报告内容表分七个区块展示（摘要/风险构成/干预效果/休息恢复/历史对比/可信度/建议），数据全部来自埋点重算。"
 
     override fun onPageReady(view: android.view.View) {
         addButton("生成本轮报告") {
@@ -23,10 +25,42 @@ class P12RoundReportPage : BasePageFragment() {
                 val report = vm.generateReport()
                 binding.pageStatus.text = report?.summaryText
                     ?: "暂无可生成报告的会话 —— 先在 P06 开始并完成（或放弃）一轮番茄"
+                report?.let { renderSections(vm.reportSections(it.sessionId)) }
             }
         }
         viewLifecycleOwner.lifecycleScope.launch {
-            vm.latestReport()?.let { binding.pageStatus.text = it.summaryText }
+            vm.latestReport()?.let { r ->
+                binding.pageStatus.text = r.summaryText
+                renderSections(vm.reportSections(r.sessionId))
+            }
+        }
+    }
+
+    /** 动态渲染区块卡片（重复渲染前先清掉旧的，保留按钮） */
+    private fun renderSections(sections: List<com.focusdu.app.report.ReportGenerator.ReportSection>) {
+        val ctx = requireContext()
+        for (i in (binding.pageBody.childCount - 1) downTo 0) {
+            if (binding.pageBody.getChildAt(i)?.tag == "section_card") {
+                binding.pageBody.removeViewAt(i)
+            }
+        }
+        sections.forEach { sec ->
+            val card = TextView(ctx).apply {
+                tag = "section_card"
+                text = buildString {
+                    append(sec.title).append('\n')
+                    sec.lines.forEach { append("· ").append(it).append('\n') }
+                }
+                setPadding(28, 22, 28, 26)
+                setBackgroundColor(Color.parseColor("#EAF1EE"))
+                setTextColor(Color.parseColor("#33413C"))
+                textSize = 13.5f
+                layoutParams = android.widget.LinearLayout.LayoutParams(
+                    android.widget.LinearLayout.LayoutParams.MATCH_PARENT,
+                    android.widget.LinearLayout.LayoutParams.WRAP_CONTENT,
+                ).apply { topMargin = 32 }
+            }
+            binding.pageBody.addView(card)
         }
     }
 }

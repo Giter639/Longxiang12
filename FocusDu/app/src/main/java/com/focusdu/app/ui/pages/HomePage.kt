@@ -33,10 +33,20 @@ class P05HomePage : BasePageFragment() {
         )
         entries.forEach { (label, id) -> addButton(label) { navigateTo(id) } }
 
+        // 今日概览数据卡（本地报告聚合，不上传）
+        viewLifecycleOwner.lifecycleScope.launch {
+            val t = vm.todaySummary()
+            binding.pageStatus.text = if (t.rounds == 0) {
+                "当前无进行中的番茄轮，今日还没有完成的轮次"
+            } else {
+                "今日已完成 ${t.rounds} 轮｜累计专注 ${t.focusMs / 60_000} 分 ${t.focusMs % 60_000 / 1000} 秒｜平均风险率 ${(t.avgRiskRate * 100).toInt()}%"
+            }
+        }
+
         viewLifecycleOwner.lifecycleScope.launch {
             vm.pomodoro.collect { s ->
                 binding.pageStatus.text = when (s.phase) {
-                    Phase.IDLE -> "当前无进行中的番茄轮"
+                    Phase.IDLE -> binding.pageStatus.text.toString().ifEmpty { "当前无进行中的番茄轮" }
                     Phase.FOCUS -> "第 ${s.roundIndex} 轮专注中 · 剩余 ${s.focusRemainingMs / 1000} 秒"
                     Phase.FOCUS_PAUSED -> "第 ${s.roundIndex} 轮已暂停 · 已专注 ${s.focusElapsedMs / 1000} 秒"
                     Phase.BREAK -> "休息中 · 剩余 ${s.breakRemainingMs / 1000} 秒"
