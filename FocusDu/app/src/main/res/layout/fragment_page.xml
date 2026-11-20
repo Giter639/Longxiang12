@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- P01–P14 骨架页通用模板：标题 + 归属标签 + 实时状态 + 任务提示 + 动态容器
+     各负责人只改自己页面的 Fragment（ui/pages/），布局不够用就复制本文件改名 -->
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:fillViewport="true">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="20dp">
+
+        <TextView
+            android:id="@+id/page_title"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:textSize="24sp"
+            android:textStyle="bold"
+            android:textColor="@color/focusdu_primary_dark" />
+
+        <TextView
+            android:id="@+id/page_owner"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:textSize="12sp"
+            android:textColor="@color/focusdu_text_hint" />
+
+        <TextView
+            android:id="@+id/page_status"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="20dp"
+            android:textSize="15sp"
+            android:background="#EAF1EE"
+            android:padding="12dp" />
+
+        <TextView
+            android:id="@+id/page_hint"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:textSize="13sp"
+            android:lineSpacingExtra="4dp"
+            android:textColor="@color/focusdu_text_hint" />
+
+        <!-- 各页面自己的控件挂这里（代码动态添加或 include 具体布局） -->
+        <LinearLayout
+            android:id="@+id/page_body"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="20dp"
+            android:orientation="vertical" />
+    </LinearLayout>
+</ScrollView>
