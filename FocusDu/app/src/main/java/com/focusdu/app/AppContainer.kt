@@ -10,6 +10,7 @@ import com.focusdu.app.guard.GuardPermissions
 import com.focusdu.app.guard.GuardSettings
 import com.focusdu.app.guard.LaunchableAppRepository
 import com.focusdu.app.guard.NotificationMemoryStore
+import com.focusdu.app.perf.DevicePerformanceMonitor
 import com.focusdu.app.pomodoro.PomodoroEngine
 import com.focusdu.app.pomodoro.PomodoroStore
 import com.focusdu.app.pomodoro.RoomPomodoroStore
@@ -74,6 +75,12 @@ class AppContainer(context: Context) {
 
     val cameraStreamer: CameraStreamer = CameraXStreamer(appContext, clock) // ← R3 接入点
     val calibrationSession = CalibrationSession(clock)
+    val performanceMonitor = DevicePerformanceMonitor(
+        context = appContext,
+        scope = appScope,
+        clock = clock,
+        cameraStreamer = cameraStreamer,
+    )
     val visionEngine: VisionEngine = MockVisionEngine(clock, appScope)     // ← R4 接入点
     val debouncer = StateStreamDebouncer(appScope, clock)
     val baselineStore = BaselineStore(db)
@@ -88,6 +95,7 @@ class AppContainer(context: Context) {
         tracker.sessionBinder = { pomodoroEngine.state.value.sessionId }   // 埋点自动归入当前会话
         cleaner.onAppStart()
         focusGuardEngine.start()
+        performanceMonitor.bindToStreaming()
         appScope.launch { pomodoroEngine.recoverIfPossible() }          // T3-02 异常恢复
         appScope.launch { visionEngine.samples().collect { debouncer.onSample(it) } }
         appScope.launch { visionEngine.samples().collect { sampleRecorder.onSample(it) } }   // 采样落盘
