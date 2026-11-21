@@ -50,7 +50,7 @@ wb.save("任务卡.xlsx")
 ## 提交规范（摘要，详见 FocusDu/docs/协作规范.md）
 
 - 从 `dev` 切分支：`feature/<任务ID>-<短名>`；commit 格式 `<任务ID>: <做了什么>`；
-- PR 到 `dev`，CI 的 `build-test` 必须绿，至少 1 人 Review（现阶段 R1 复核）；
+- PR 到 `dev`，CI 的 `build-test` 必须绿，至少 1 人 Review——**任意有写权限的队友都可以批准，PR 作者除外**（涉及口径/协议的改动仍需 R1+R2 或 R1+R4 双方确认）；
 - `dev` 每天收工前合入 `main` 出当日构建；`main` 只接受 `dev` 的 PR。
 
 ## 文档地图
