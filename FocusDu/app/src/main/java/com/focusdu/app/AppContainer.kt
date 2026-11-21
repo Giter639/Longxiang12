@@ -5,6 +5,11 @@ import com.focusdu.app.core.AndroidMonotonicClock
 import com.focusdu.app.core.MonotonicClock
 import com.focusdu.app.data.RollingCleaner
 import com.focusdu.app.data.db.AppDatabase
+import com.focusdu.app.guard.FocusGuardEngine
+import com.focusdu.app.guard.GuardPermissions
+import com.focusdu.app.guard.GuardSettings
+import com.focusdu.app.guard.LaunchableAppRepository
+import com.focusdu.app.guard.NotificationMemoryStore
 import com.focusdu.app.pomodoro.PomodoroEngine
 import com.focusdu.app.pomodoro.PomodoroStore
 import com.focusdu.app.pomodoro.RoomPomodoroStore
@@ -52,6 +57,20 @@ class AppContainer(context: Context) {
 
     val reminderEngine = ReminderEngine(clock, tracker)
     val pomodoroEngine = PomodoroEngine(clock, appScope, tracker, pomodoroStore)
+    val guardPermissions = GuardPermissions(appContext)
+    val guardSettings = GuardSettings(appContext)
+    val launchableApps = LaunchableAppRepository(appContext)
+    val notificationMemory = NotificationMemoryStore(clock)
+    val focusGuardEngine = FocusGuardEngine(
+        context = appContext,
+        scope = appScope,
+        clock = clock,
+        pomodoroState = pomodoroEngine.state,
+        settings = guardSettings,
+        permissions = guardPermissions,
+        notificationMemory = notificationMemory,
+        tracker = tracker,
+    )
 
     val cameraStreamer: CameraStreamer = CameraXStreamer(appContext, clock) // ← R3 接入点
     val calibrationSession = CalibrationSession(clock)
@@ -68,6 +87,7 @@ class AppContainer(context: Context) {
     fun onAppReady() {
         tracker.sessionBinder = { pomodoroEngine.state.value.sessionId }   // 埋点自动归入当前会话
         cleaner.onAppStart()
+        focusGuardEngine.start()
         appScope.launch { pomodoroEngine.recoverIfPossible() }          // T3-02 异常恢复
         appScope.launch { visionEngine.samples().collect { debouncer.onSample(it) } }
         appScope.launch { visionEngine.samples().collect { sampleRecorder.onSample(it) } }   // 采样落盘

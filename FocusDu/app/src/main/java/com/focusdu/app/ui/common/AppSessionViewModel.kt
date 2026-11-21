@@ -11,6 +11,9 @@ import androidx.lifecycle.viewModelScope
 import com.focusdu.app.AppContainer
 import com.focusdu.app.FocusDuApp
 import com.focusdu.app.data.db.ReportEntity
+import com.focusdu.app.guard.GuardPermission
+import com.focusdu.app.guard.GuardPermissionSnapshot
+import com.focusdu.app.guard.LaunchableApp
 import com.focusdu.app.pomodoro.PomodoroMode
 import com.focusdu.app.pomodoro.PomodoroService
 import com.focusdu.app.reminder.RiskType
@@ -35,6 +38,7 @@ class AppSessionViewModel(private val container: AppContainer) : ViewModel() {
     val reminders = container.reminderEngine.decisions
     val cameraStatus = container.cameraStreamer.status
     val calibration = container.calibrationSession.state
+    val restrictedPackages = container.guardSettings.restrictedPackages
 
     // ---- 番茄（T3-01/T3-02） ----
     fun startPomodoro(mode: PomodoroMode) = viewModelScope.launch {
@@ -90,6 +94,34 @@ class AppSessionViewModel(private val container: AppContainer) : ViewModel() {
         calibrationJob = null
         container.calibrationSession.cancel()
         container.cameraStreamer.stop()
+    }
+
+    // ---- 专注守护（T4-01/T4-03/T4-05） ----
+    fun permissionSnapshot(): Map<GuardPermission, GuardPermissionSnapshot> =
+        container.guardPermissions.snapshot()
+
+    fun permissionSettingsIntent(permission: GuardPermission) =
+        container.guardPermissions.settingsIntent(permission)
+
+    fun setRestricted(packageName: String, restricted: Boolean) =
+        container.guardSettings.setRestricted(packageName, restricted)
+
+    suspend fun loadLaunchableApps(): List<LaunchableApp> = container.launchableApps.load()
+
+    data class NotificationSummaryItem(
+        val appLabel: String,
+        val count: Int,
+    )
+
+    fun notificationSummary(): List<NotificationSummaryItem> {
+        val packageManager = container.appContext.packageManager
+        return container.notificationMemory.snapshot().map { item ->
+            val label = runCatching {
+                val info = packageManager.getApplicationInfo(item.packageName, 0)
+                packageManager.getApplicationLabel(info).toString()
+            }.getOrDefault(item.packageName)
+            NotificationSummaryItem(label, item.count)
+        }
     }
 
     // ---- 报告（T6-01/02/03） ----

@@ -2,6 +2,7 @@ package com.focusdu.app.ui.pages
 
 import android.Manifest
 import android.content.pm.PackageManager
+import android.os.Build
 import android.view.ViewGroup
 import android.widget.LinearLayout
 import androidx.activity.result.contract.ActivityResultContracts
@@ -9,9 +10,12 @@ import androidx.camera.view.PreviewView
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.lifecycleScope
 import com.focusdu.app.R
+import com.focusdu.app.guard.GuardPermission
+import com.focusdu.app.guard.GuardPermissionState
 import com.focusdu.app.ui.common.BasePageFragment
 import com.focusdu.app.vision.CalibrationIssue
 import com.focusdu.app.vision.CalibrationState
+import com.google.android.material.button.MaterialButton
 import kotlinx.coroutines.launch
 
 /**
@@ -21,12 +25,87 @@ import kotlinx.coroutines.launch
 
 /** P01 首次引导与隐私说明 —— R2 文案（T7-01，验收 ≤3 屏）；R3 权限模块在此接入（T4-01） */
 class P01GuidePage : BasePageFragment() {
-    override val ownerTag = "R2 文案 T7-01 · R3 权限 T4-01"
-    override val hintText = "TODO：三步引导 + 隐私要点（不上传/可主动退出）；权限逐项授权、三态可视（授予/拒绝/撤回）。POST_NOTIFICATIONS、相机、使用情况访问权限的请求代码放这里。"
+    override val ownerTag: String
+        get() = getString(R.string.p01_owner)
+    override val hintText: String
+        get() = getString(R.string.p01_hint)
+
+    private val permissionButtons = mutableMapOf<GuardPermission, MaterialButton>()
+    private val runtimePermissionLauncher = registerForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { refreshPermissionUi() }
 
     override fun onPageReady(view: android.view.View) {
-        addButton("下一步：固定机位引导") { navigateTo(R.id.p02PositioningPage) }
+        GuardPermission.entries.forEach { permission ->
+            val button = addButton("") { onPermissionClicked(permission) }
+            permissionButtons[permission] = button
+        }
+        addButton(getString(R.string.p01_next)) { navigateTo(R.id.p02PositioningPage) }
+        refreshPermissionUi()
     }
+
+    override fun onResume() {
+        super.onResume()
+        refreshPermissionUi()
+    }
+
+    private fun onPermissionClicked(permission: GuardPermission) {
+        val state = vm.permissionSnapshot()[permission]?.state ?: GuardPermissionState.DENIED
+        if (permission == GuardPermission.CAMERA || permission == GuardPermission.NOTIFICATIONS) {
+            if (state == GuardPermissionState.DENIED) {
+                val runtimePermission = when (permission) {
+                    GuardPermission.CAMERA -> Manifest.permission.CAMERA
+                    else -> if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                        Manifest.permission.POST_NOTIFICATIONS
+                    } else {
+                        null
+                    }
+                }
+                if (runtimePermission != null) {
+                    runtimePermissionLauncher.launch(runtimePermission)
+                } else {
+                    runCatching { startActivity(vm.permissionSettingsIntent(permission)) }
+                }
+            } else {
+                runCatching { startActivity(vm.permissionSettingsIntent(permission)) }
+            }
+        } else {
+            runCatching { startActivity(vm.permissionSettingsIntent(permission)) }
+        }
+    }
+
+    private fun refreshPermissionUi() {
+        if (view == null) return
+        val snapshot = vm.permissionSnapshot()
+        permissionButtons.forEach { (permission, button) ->
+            val state = snapshot[permission]?.state ?: GuardPermissionState.DENIED
+            button.text = getString(
+                R.string.permission_button,
+                permissionName(permission),
+                permissionState(state),
+            )
+        }
+        val missing = snapshot.count { it.value.state != GuardPermissionState.GRANTED }
+        binding.pageStatus.text = getString(R.string.p01_permission_summary, missing)
+    }
+
+    private fun permissionName(permission: GuardPermission): String = getString(
+        when (permission) {
+            GuardPermission.CAMERA -> R.string.permission_camera
+            GuardPermission.NOTIFICATIONS -> R.string.permission_notifications
+            GuardPermission.USAGE_ACCESS -> R.string.permission_usage
+            GuardPermission.NOTIFICATION_LISTENER -> R.string.permission_notification_listener
+            GuardPermission.OVERLAY -> R.string.permission_overlay
+        }
+    )
+
+    private fun permissionState(state: GuardPermissionState): String = getString(
+        when (state) {
+            GuardPermissionState.GRANTED -> R.string.permission_granted
+            GuardPermissionState.DENIED -> R.string.permission_denied
+            GuardPermissionState.REVOKED -> R.string.permission_revoked
+        }
+    )
 }
 
 /** P02 固定机位引导 —— R2 示意图（T1-01，验收 3 人实测 2 人一次摆对）；R3 支架摆位图（X12） */
