@@ -8,3 +8,9 @@ build/
 .externalNativeBuild
 .cxx
 local.properties
+
+# X06 签名密钥：绝不入库（keystore.properties 里的密码同样不入库）
+keystore/
+*.jks
+*.keystore
+keystore.properties
