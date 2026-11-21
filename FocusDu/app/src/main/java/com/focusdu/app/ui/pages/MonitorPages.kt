@@ -177,6 +177,16 @@ class P09RestPage : BasePageFragment() {
     override val hintText = "休息期间自动统计离开屏幕时长；休息结束时恢复校验结论展示在这里，并自动写入本轮报告（REST_VALIDATED）。"
 
     override fun onPageReady(view: android.view.View) {
+        addButton(getString(R.string.p09_notification_summary_button)) {
+            val summaries = vm.notificationSummary()
+            binding.pageStatus.text = if (summaries.isEmpty()) {
+                getString(R.string.p09_notification_summary_empty)
+            } else {
+                summaries.joinToString("\n") {
+                    getString(R.string.p09_notification_summary_item, it.appLabel, it.count)
+                }
+            }
+        }
         addButton("查看延后消息摘要") {
             val list = vm.drainDeferredForRest()
             binding.pageStatus.text = if (list.isEmpty()) "没有延后的提醒"
