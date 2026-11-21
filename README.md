@@ -1,18 +1,27 @@
-# Longxiang12
-龙翔小分队 —— 「专注有度」项目仓库
+# Longxiang12 · 龙翔小分队
 
-## 目录
+![CI](https://github.com/Giter639/Longxiang12/actions/workflows/ci.yml/badge.svg)
 
-- `FocusDu/` —— Android 客户端工程（架构与硬规则见 `FocusDu/README.md`）
-- `任务卡.xlsx` —— 45 条任务四人分工，每日进度的唯一权威
-- `AGENTS.md` —— AI 协作工作流（每次开工必读）
+> OPPO Android 学习过程反馈与专注管理助手 —— **专注有度**
+> 识别学习风险、纠正坐姿、管理番茄节奏、减少手机干扰，本地报告与个人基线对比。
 
-## 每日流程（所有人，包括 AI 助手）
+## 仓库导航
 
-1. **开工前**读 `任务卡.xlsx` 自己的 sheet（R1–R4），按「完成情况」领任务；
-2. 干活遵守 `FocusDu/README.md` 硬规则与 `FocusDu/docs/协作规范.md` 提交规范；
-3. **完工后**更新任务卡「完成情况」列，随 PR 一起提交——不写卡 = 任务等于没做。
+| 内容 | 位置 |
+| --- | --- |
+| 📱 客户端工程（架构/接入指南/任务对照表） | [`FocusDu/`](FocusDu/README.md) |
+| 📋 四人任务卡（R1 软件工程 / R2 需求质量 / R3 采集设备 / R4 人工智能） | `任务卡.xlsx` |
+| 🤖 AI 协作工作流 | `AGENTS.md` / `CLAUDE.md` |
+| 📏 指标口径表（待 R2 定稿） | [`FocusDu/docs/指标口径表.md`](FocusDu/docs/指标口径表.md) |
+| 📄 接口协议 v0 | [`FocusDu/docs/接口协议v0.md`](FocusDu/docs/接口协议v0.md) |
 
-## 快速开始（客户端）
+## 快速开始
 
-见 `FocusDu/README.md`。日常：双击 `启动器.bat` 自动拉起模拟器/真机并打开 App。
+1. clone 本仓库（**放在纯英文路径**）
+2. Android Studio 打开 `FocusDu/`
+3. 双击根目录 `启动器.bat` 直接跑 App
+4. 每个 PR 由 CI 自动构建 + 47 个单测把关；合并需至少 1 人 Approve + 手动合并
+
+## 分工
+
+R1 软件工程（技术负责人）· R2 机械制造（需求与质量）· R3 电子信息（采集与设备）· R4 人工智能（算法 + 答辩）——分工与验收详见 `任务卡.xlsx`。
