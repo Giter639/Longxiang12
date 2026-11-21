@@ -1,3 +1,5 @@
+import java.util.Properties
+
 plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
@@ -13,15 +15,39 @@ android {
         minSdk = 26
         targetSdk = 35
         // 版本号规则见 docs/协作规范.md：1.0.D<天数>，每天发版 +1
-        versionCode = 1
-        versionName = "1.0.D1"
+        versionCode = 5
+        versionName = "1.0.D5"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
-    buildTypes {
-        release {
-            isMinifyEnabled = false
-            proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
+    // X06 签名打包：keystore.properties 不入库（见 .gitignore），
+    // 只有 R1 的发版机上有；其他机器没有该文件时 release 退回未签名，不影响日常构建。
+    val keystorePropsFile = rootProject.file("keystore/keystore.properties")
+    if (keystorePropsFile.exists()) {
+        val keystoreProps = Properties().apply {
+            keystorePropsFile.inputStream().use { load(it) }
+        }
+        signingConfigs {
+            create("release") {
+                storeFile = rootProject.file(keystoreProps["storeFile"] as String)
+                storePassword = keystoreProps["storePassword"] as String
+                keyAlias = keystoreProps["keyAlias"] as String
+                keyPassword = keystoreProps["keyPassword"] as String
+            }
+        }
+        buildTypes {
+            release {
+                isMinifyEnabled = false
+                proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
+                signingConfig = signingConfigs.getByName("release")
+            }
+        }
+    } else {
+        buildTypes {
+            release {
+                isMinifyEnabled = false
+                proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
+            }
         }
     }
     compileOptions {
