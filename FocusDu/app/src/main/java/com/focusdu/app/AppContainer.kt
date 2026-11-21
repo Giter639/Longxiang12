@@ -17,9 +17,10 @@ import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
 
 import com.focusdu.app.vision.BaselineStore
+import com.focusdu.app.vision.CalibrationSession
 import com.focusdu.app.vision.CameraStreamer
+import com.focusdu.app.vision.CameraXStreamer
 import com.focusdu.app.vision.MockVisionEngine
-import com.focusdu.app.vision.NoCameraStreamer
 import com.focusdu.app.vision.StateSpanLogger
 import com.focusdu.app.vision.StateStreamDebouncer
 import com.focusdu.app.vision.VisionEngine
@@ -52,7 +53,8 @@ class AppContainer(context: Context) {
     val reminderEngine = ReminderEngine(clock, tracker)
     val pomodoroEngine = PomodoroEngine(clock, appScope, tracker, pomodoroStore)
 
-    val cameraStreamer: CameraStreamer = NoCameraStreamer()                 // ← R3 接入点
+    val cameraStreamer: CameraStreamer = CameraXStreamer(appContext, clock) // ← R3 接入点
+    val calibrationSession = CalibrationSession(clock)
     val visionEngine: VisionEngine = MockVisionEngine(clock, appScope)     // ← R4 接入点
     val debouncer = StateStreamDebouncer(appScope, clock)
     val baselineStore = BaselineStore(db)
@@ -69,6 +71,8 @@ class AppContainer(context: Context) {
         appScope.launch { pomodoroEngine.recoverIfPossible() }          // T3-02 异常恢复
         appScope.launch { visionEngine.samples().collect { debouncer.onSample(it) } }
         appScope.launch { visionEngine.samples().collect { sampleRecorder.onSample(it) } }   // 采样落盘
+        appScope.launch { visionEngine.samples().collect { calibrationSession.onVisionSample(it) } }
+        appScope.launch { cameraStreamer.frames().collect { calibrationSession.onFrame(it) } }
         spanLogger.start(appScope)
         riskWire.start(appScope)
         // T3-04 休息恢复校验：观察相位变化 + 实时状态流

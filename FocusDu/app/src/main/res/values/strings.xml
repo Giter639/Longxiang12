@@ -28,6 +28,24 @@
     <string name="btn_give_up">放弃本轮</string>
     <string name="btn_generate_report">生成本轮报告</string>
 
+    <!-- R3 校准采集（T1-02/T1-03） -->
+    <string name="p03_owner">R3 采集 X11 · T1-02 · T1-03</string>
+    <string name="p03_hint">请保持坐姿稳定，并让脸部完整出现在画面中。校准会采集 150 个有效帧，遮挡、低置信或摄像头移动时会暂停，恢复后继续。</string>
+    <string name="p03_start">开始校准采集</string>
+    <string name="p03_next">下一步：校准完成</string>
+    <string name="p03_idle">点击开始校准采集</string>
+    <string name="p03_running">校准中：%1$d / %2$d 帧，有效时长 %3$.1f 秒</string>
+    <string name="p03_running_issue">校准已暂停：已采集 %1$d / %2$d 帧\n%3$s</string>
+    <string name="p03_completed">校准采集完成：%1$d 帧，有效时长 %2$.1f 秒</string>
+    <string name="p03_failed">校准未完成：%1$s</string>
+    <string name="p03_permission_denied">未获得相机权限，无法采集校准数据</string>
+    <string name="p03_issue_occluded">画面中未检测到完整人脸，请调整机位</string>
+    <string name="p03_issue_low_confidence">当前检测置信度过低，请改善光照或调整机位</string>
+    <string name="p03_issue_moving">检测到手机移动，请固定设备后继续</string>
+    <string name="p03_issue_interrupted">相机或检测数据中断，恢复后会自动继续</string>
+    <string name="p03_issue_frames">有效帧不足，请固定设备后重试</string>
+    <string name="p03_issue_camera">当前设备没有可用相机</string>
+
     <!-- 占位提示（骨架期展示，各负责人实现后替换） -->
     <string name="tpl_todo_prefix">本页为骨架模板，</string>
 </resources>

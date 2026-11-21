@@ -1,8 +1,17 @@
 package com.focusdu.app.ui.pages
 
+import android.Manifest
+import android.content.pm.PackageManager
+import android.view.ViewGroup
+import android.widget.LinearLayout
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.camera.view.PreviewView
+import androidx.core.content.ContextCompat
 import androidx.lifecycle.lifecycleScope
 import com.focusdu.app.R
 import com.focusdu.app.ui.common.BasePageFragment
+import com.focusdu.app.vision.CalibrationIssue
+import com.focusdu.app.vision.CalibrationState
 import kotlinx.coroutines.launch
 
 /**
@@ -32,12 +41,114 @@ class P02PositioningPage : BasePageFragment() {
 
 /** P03 校准采集（5–10s） —— R3 实现（T1-02 采集 / T1-03 质量校验，验收采集成功率 ≥95%） */
 class P03CalibrationPage : BasePageFragment() {
-    override val ownerTag = "R3 采集 T1-02/T1-03"
-    override val hintText = "TODO：稳定帧判定 → 采样 ≥150 帧 → 遮挡/低置信/摄像头移动三类拦截提示，中断可续。采集帧喂给 R4 的基线算法（T1-04）。"
+    override val ownerTag: String
+        get() = getString(R.string.p03_owner)
+    override val hintText: String
+        get() = getString(R.string.p03_hint)
+
+    private lateinit var previewView: PreviewView
+    private var nextButton: com.google.android.material.button.MaterialButton? = null
+
+    private val cameraPermissionLauncher = registerForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { granted ->
+        if (granted) startCalibration() else {
+            binding.pageStatus.text = getString(R.string.p03_permission_denied)
+        }
+    }
 
     override fun onPageReady(view: android.view.View) {
-        addButton("下一步：校准完成") { navigateTo(R.id.p04BaselinePage) }
+        previewView = PreviewView(requireContext()).apply {
+            implementationMode = PreviewView.ImplementationMode.COMPATIBLE
+            scaleType = PreviewView.ScaleType.FILL_CENTER
+            layoutParams = LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                dp(360),
+            )
+        }
+        binding.pageBody.addView(previewView, 0)
+
+        addButton(getString(R.string.p03_start)) {
+            if (hasCameraPermission()) {
+                startCalibration()
+            } else {
+                cameraPermissionLauncher.launch(Manifest.permission.CAMERA)
+            }
+        }
+        nextButton = addButton(getString(R.string.p03_next)) {
+            navigateTo(R.id.p04BaselinePage)
+        }.also { it.isEnabled = false }
+
+        viewLifecycleOwner.lifecycleScope.launch {
+            vm.calibration.collect { state ->
+                binding.pageStatus.text = when (state) {
+                    CalibrationState.Idle -> getString(R.string.p03_idle)
+                    is CalibrationState.Running -> runningText(state)
+                    is CalibrationState.Completed -> {
+                        nextButton?.isEnabled = true
+                        getString(
+                            R.string.p03_completed,
+                            state.frameCount,
+                            state.activeValidMs / 1000f,
+                        )
+                    }
+                    is CalibrationState.Failed -> {
+                        nextButton?.isEnabled = false
+                        getString(R.string.p03_failed, issueText(state.reason))
+                    }
+                }
+            }
+        }
     }
+
+    override fun onDestroyView() {
+        vm.stopCalibration()
+        super.onDestroyView()
+    }
+
+    private fun startCalibration() {
+        nextButton?.isEnabled = false
+        vm.startCalibration(viewLifecycleOwner, previewView)
+    }
+
+    private fun hasCameraPermission(): Boolean =
+        ContextCompat.checkSelfPermission(
+            requireContext(),
+            Manifest.permission.CAMERA,
+        ) == PackageManager.PERMISSION_GRANTED
+
+    private fun runningText(state: CalibrationState.Running): String {
+        val issue = state.issue?.let(::issueText)
+        return if (issue == null) {
+            getString(
+                R.string.p03_running,
+                state.frameCount,
+                state.requiredFrames,
+                state.activeValidMs / 1000f,
+            )
+        } else {
+            getString(
+                R.string.p03_running_issue,
+                state.frameCount,
+                state.requiredFrames,
+                issue,
+            )
+        }
+    }
+
+    private fun issueText(issue: CalibrationIssue): String = getString(
+        when (issue) {
+            CalibrationIssue.OCCLUDED -> R.string.p03_issue_occluded
+            CalibrationIssue.LOW_CONFIDENCE -> R.string.p03_issue_low_confidence
+            CalibrationIssue.CAMERA_MOVING -> R.string.p03_issue_moving
+            CalibrationIssue.STREAM_INTERRUPTED -> R.string.p03_issue_interrupted
+            CalibrationIssue.INSUFFICIENT_FRAMES -> R.string.p03_issue_frames
+            CalibrationIssue.CAMERA_UNAVAILABLE -> R.string.p03_issue_camera
+        }
+    )
+
+    private fun dp(value: Int): Int =
+        (value * resources.displayMetrics.density).toInt()
 }
 
 /** P04 校准完成/基线确认 —— R4 基线生成（T1-04，验收字段完整率 100%、重建偏差 <5%） */
