@@ -2,9 +2,11 @@ package com.focusdu.app.ui.common
 
 import android.app.Application
 import android.content.Intent
+import androidx.camera.view.PreviewView
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.viewModelScope
 import com.focusdu.app.AppContainer
 import com.focusdu.app.FocusDuApp
@@ -12,8 +14,13 @@ import com.focusdu.app.data.db.ReportEntity
 import com.focusdu.app.pomodoro.PomodoroMode
 import com.focusdu.app.pomodoro.PomodoroService
 import com.focusdu.app.reminder.RiskType
+import com.focusdu.app.vision.CalibrationIssue
+import com.focusdu.app.vision.CalibrationState
 import com.focusdu.app.vision.PersonalBaseline
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import java.util.Calendar
 
@@ -26,6 +33,8 @@ class AppSessionViewModel(private val container: AppContainer) : ViewModel() {
     val pomodoro = container.pomodoroEngine.state
     val visionUi = container.debouncer.ui
     val reminders = container.reminderEngine.decisions
+    val cameraStatus = container.cameraStreamer.status
+    val calibration = container.calibrationSession.state
 
     // ---- 番茄（T3-01/T3-02） ----
     fun startPomodoro(mode: PomodoroMode) = viewModelScope.launch {
@@ -52,6 +61,36 @@ class AppSessionViewModel(private val container: AppContainer) : ViewModel() {
     // ---- 休息恢复校验（T3-04） ----
     fun restCheck() = container.restValidator.lastCheck()
     fun currentAwayMs() = container.restValidator.currentAwayMs()
+
+    // ---- 相机校准（X11 / T1-02 / T1-03） ----
+    private var calibrationJob: Job? = null
+
+    fun startCalibration(owner: LifecycleOwner, previewView: PreviewView) {
+        calibrationJob?.cancel()
+        container.calibrationSession.start()
+        calibrationJob = viewModelScope.launch {
+            try {
+                container.cameraStreamer.start(
+                    lifecycleOwner = owner,
+                    previewView = previewView,
+                    targetFps = CALIBRATION_TARGET_FPS,
+                )
+                while (isActive && container.calibrationSession.state.value is CalibrationState.Running) {
+                    container.calibrationSession.tick()
+                    delay(CALIBRATION_TICK_MS)
+                }
+            } catch (_: Throwable) {
+                container.calibrationSession.fail(CalibrationIssue.CAMERA_UNAVAILABLE)
+            }
+        }
+    }
+
+    fun stopCalibration() {
+        calibrationJob?.cancel()
+        calibrationJob = null
+        container.calibrationSession.cancel()
+        container.cameraStreamer.stop()
+    }
 
     // ---- 报告（T6-01/02/03） ----
     suspend fun generateReport(): ReportEntity? {
@@ -104,5 +143,10 @@ class AppSessionViewModel(private val container: AppContainer) : ViewModel() {
         @Suppress("UNCHECKED_CAST")
         override fun <T : ViewModel> create(modelClass: Class<T>): T =
             AppSessionViewModel((app as FocusDuApp).container) as T
+    }
+
+    private companion object {
+        const val CALIBRATION_TARGET_FPS = 15
+        const val CALIBRATION_TICK_MS = 250L
     }
 }
