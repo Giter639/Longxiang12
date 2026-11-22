@@ -15,8 +15,8 @@ android {
         minSdk = 26
         targetSdk = 35
         // 版本号规则见 docs/协作规范.md：1.0.D<天数>，每天发版 +1
-        versionCode = 5
-        versionName = "1.0.D5"
+        versionCode = 6
+        versionName = "1.0.D6"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
@@ -89,6 +89,9 @@ dependencies {
     implementation("androidx.camera:camera-core:1.4.1")
     implementation("androidx.camera:camera-camera2:1.4.1")
     implementation("androidx.camera:camera-lifecycle:1.4.1")
+
+    // R4 真引擎（X00 选型定稿：MediaPipe Tasks Vision，模型资产 assets/face_landmarker.task）
+    implementation("com.google.mediapipe:tasks-vision:0.10.14")
     implementation("androidx.camera:camera-view:1.4.1")
 
     // 单元测试（验收标准的自动化锚点）
