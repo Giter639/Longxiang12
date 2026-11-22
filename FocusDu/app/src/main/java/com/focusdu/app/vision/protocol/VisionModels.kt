@@ -16,7 +16,7 @@ enum class FusionState(val label: String) {
 /**
  * 接口协议 v0（docs/接口协议v0.md）的内存对象。
  * R4 的真引擎（MediaPipe 等）负责产出它；JSON 形态仅用于落盘对齐与复赛文档，进程内传对象即可。
- * 字段含义与单位见协议文档，改动协议必须双方（R1+R4）同时确认。
+ * 字段含义与单位见协议文档，改动协议由 R4 定稿（R1 已于 2026-11-22 豁免双签，走正常 PR）。
  */
 data class VisionSample(
     val tsMs: Long,               // 单调时钟毫秒
