@@ -50,7 +50,7 @@ wb.save("任务卡.xlsx")
 3. 计时只用 `core/MonotonicClock`（SystemClock.elapsedRealtime），**禁止** `System.currentTimeMillis()` 参与任何时长计算。
 4. 数据记录只走 `Tracker.log()`；报告只从埋点重算（`MetricsCalculator` 是纯函数），不允许旁路统计。
 5. 文案进 `res/values/strings.xml`，禁止代码写死中文（R2 唯一入口）。
-6. 口径常量只在 `report/MetricDefs.kt`；**接口协议（VisionSample/CameraStreamer）变更必须 R1+R4 双方在同一 PR 确认**。
+6. 口径常量只在 `report/MetricDefs.kt`；**口径改动必须 R1+R2 双方在同一 PR 确认**；接口协议（VisionSample/CameraStreamer）变更由 **R4 定稿**（R1 已于 2026-11-22 豁免双签），走正常 PR 流程即可。
 
 ### 各角色接入点与细节（只动自己的领域）
 
