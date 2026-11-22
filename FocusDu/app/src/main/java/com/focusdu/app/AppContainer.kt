@@ -81,7 +81,9 @@ class AppContainer(context: Context) {
         clock = clock,
         cameraStreamer = cameraStreamer,
     )
-    val visionEngine: VisionEngine = MockVisionEngine(clock, appScope)     // ← R4 接入点
+    // ← R4 接入点：真机联调（有真实人脸）时切换为 MediaPipeVisionEngine（需 setBaseline 注入基线）：
+    // val visionEngine: VisionEngine = MediaPipeVisionEngine(appContext, clock, appScope, cameraStreamer)
+    val visionEngine: VisionEngine = MockVisionEngine(clock, appScope)
     val debouncer = StateStreamDebouncer(appScope, clock)
     val baselineStore = BaselineStore(db)
     val reportGenerator = ReportGenerator(db, tracker, clock, cleaner)
