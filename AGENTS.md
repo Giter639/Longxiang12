@@ -60,11 +60,13 @@ wb.save("任务卡.xlsx")
 - 机型参数表在 `FocusDu/docs/R3机型适配与验证.md`。
 
 **R4（算法）**：
-- 实现 `vision/VisionEngine.kt` 接口（建议类名 `MediaPipeVisionEngine`）：`fun samples(): Flow<VisionSample>` + `fun stop()`；
-- 输出协议 = `vision/protocol/VisionModels.kt` 的 `VisionSample`（字段/单位/枚举见 `FocusDu/docs/接口协议v0.md`），六态融合 `FusionState`；
-- ⚠️ `CameraStreamer` 接口在 X11 中已更新（新增 `status: StateFlow<CameraStatus>`、`start(LifecycleOwner, PreviewView?, targetFps)`），喂帧逻辑以当前代码为准；
-- 完成后只改 `AppContainer` 里 `val visionEngine: VisionEngine = MockVisionEngine(...)` 一行绑定，UI/报告代码不用动；
-- 算法事件源就绪后，用事件流替换 `reminder/RiskEventWire.kt`（当前是骨架演示接线）。
+- ✅ 已完成：`vision/MediaPipeVisionEngine`（FaceLandmarker LIVE_STREAM + NV21 解码 + 判定层调度）、
+  `vision/FaceFeatureMapper`（纯映射，单测锚定欧拉角往返/faceScale/blendshape/亮度）、模型资产 `assets/face_landmarker.task`、
+  判定层 `vision/algo/`（基线/距离/姿态/久坐/光照/离屏/眨眼/困倦/分级/六态融合）；
+- **当前绑定仍是 MockVisionEngine**（`AppContainer` 有注释好的切换行）——真机联调时：换绑定 + 调 `setBaseline` 注入基线 +
+  真机标定 `FaceFeatureMapper` 的 PITCH/YAW/FORWARD 符号常量（实测低头方向若相反只翻符号）；
+- ⚠️ 肩线检测降级：FaceLandmarker 无肩部关键点，`shoulderTiltDeg` 恒 0，T2-02 肩线子项待 MediaPipe Pose 增强；
+- 算法事件源（PostureDetector.activeEvent / SittingMonitor.sedentaryEvent）就绪后，用事件流替换 `reminder/RiskEventWire.kt`（当前是骨架演示接线）。
 
 **R2（需求/质量）**：
 - 文案只改 `res/values/strings.xml`（三套人格文案 T5-01、引导 T7-01 都在此）；
