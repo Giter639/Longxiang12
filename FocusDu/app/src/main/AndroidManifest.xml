@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
 
     <!-- 番茄钟前台服务（T3-02 计时与中断恢复） -->
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
@@ -11,7 +12,19 @@
     <uses-permission android:name="android.permission.CAMERA" />
     <uses-feature android:name="android.hardware.camera" android:required="false" />
 
-    <!-- R3（T4-01/T4-03 权限与拦截页）在此追加：PackageUsageStats、通知使用权等，不要动其他节点 -->
+    <!-- R3：使用情况访问用于识别前台限制应用；悬浮窗用于显示可主动退出的软拦截页 -->
+    <uses-permission
+        android:name="android.permission.PACKAGE_USAGE_STATS"
+        tools:ignore="ProtectedPermissions" />
+    <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
+
+    <!-- Android 11+ 包可见性：P10 仅枚举可启动应用供用户选择 -->
+    <queries>
+        <intent>
+            <action android:name="android.intent.action.MAIN" />
+            <category android:name="android.intent.category.LAUNCHER" />
+        </intent>
+    </queries>
 
     <application
         android:name=".FocusDuApp"
@@ -39,6 +52,16 @@
             <property
                 android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
                 android:value="pomodoro_timer_countdown" />
+        </service>
+
+        <!-- R3 T4-01：仅记录通知来源包名，不读取正文；原通知保持未读 -->
+        <service
+            android:name=".guard.NotificationCaptureService"
+            android:exported="true"
+            android:permission="android.permission.BIND_NOTIFICATION_LISTENER_SERVICE">
+            <intent-filter>
+                <action android:name="android.service.notification.NotificationListenerService" />
+            </intent-filter>
         </service>
     </application>
 </manifest>
