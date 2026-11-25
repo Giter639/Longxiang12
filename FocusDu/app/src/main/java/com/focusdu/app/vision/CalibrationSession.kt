@@ -90,6 +90,12 @@ class CalibrationSession(
         publish(nowMs)
     }
 
+    /**
+     * 每计入一个有效帧时回调，参数是该帧时刻最近一次分析样本（有效帧的前提是已有分析样本，故非空）。
+     * 接线方据此收集基线特征：基线按「采集帧」计数，与这里的帧数口径保持一致。
+     */
+    var onValidFrame: ((VisionSample) -> Unit)? = null
+
     fun onFrame(frame: CameraFrame) {
         if (!running) return
         lastFrameAtMs = frame.tsMs
@@ -97,6 +103,7 @@ class CalibrationSession(
         updateIssue(issue, frame.tsMs)
         if (issue == null) {
             validFrames++
+            latestSample?.let { onValidFrame?.invoke(it) }
         }
         publish(frame.tsMs)
     }

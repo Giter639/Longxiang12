@@ -27,6 +27,8 @@ import com.focusdu.app.vision.CalibrationSession
 import com.focusdu.app.vision.CameraStreamer
 import com.focusdu.app.vision.CameraXStreamer
 import com.focusdu.app.vision.MockVisionEngine
+import com.focusdu.app.vision.MediaPipeVisionEngine
+import com.focusdu.app.vision.SessionCameraGate
 import com.focusdu.app.vision.StateSpanLogger
 import com.focusdu.app.vision.StateStreamDebouncer
 import com.focusdu.app.vision.VisionEngine
@@ -40,9 +42,9 @@ import kotlinx.coroutines.launch
  * X02 骨架核心：手工依赖容器（比赛期不引入 Hilt，减少构建变量）。
  * 所有引擎都是进程级单例，UI 通过 AppSessionViewModel 订阅它们的状态流。
  *
- * 三人接入点（改绑定，不改调用方）：
- * - R3：cameraStreamer 换成 CameraXStreamer 实现（X11）
- * - R4：visionEngine 换成 MediaPipeVisionEngine 实现（X00/T2-10）
+ * 已接入：
+ * - R3：cameraStreamer = CameraXStreamer（X11）；校准采集与番茄取流共用相机，开关统一走 SessionCameraGate
+ * - R4：visionEngine = MediaPipeVisionEngine（X00/T2-10）；基线经 setBaseline 注入（T1-04）
  * - R2：不动代码，只改 res/values/strings.xml 文案（T5-01/T7-01）
  */
 class AppContainer(context: Context) {
@@ -81,9 +83,11 @@ class AppContainer(context: Context) {
         clock = clock,
         cameraStreamer = cameraStreamer,
     )
-    // ← R4 接入点：真机联调（有真实人脸）时切换为 MediaPipeVisionEngine（需 setBaseline 注入基线）：
-    // val visionEngine: VisionEngine = MediaPipeVisionEngine(appContext, clock, appScope, cameraStreamer)
-    val visionEngine: VisionEngine = MockVisionEngine(clock, appScope)
+    // R4 真引擎（MediaPipe FaceLandmarker）为默认绑定。联调异常时把下一行的注释互换即可切回
+    // MockVisionEngine（按剧本输出假数据），其余代码不用动。
+    val visionEngine: VisionEngine = MediaPipeVisionEngine(appContext, clock, appScope, cameraStreamer)
+    // val visionEngine: VisionEngine = MockVisionEngine(clock, appScope)
+    val sessionCamera = SessionCameraGate(cameraStreamer, appScope)
     val debouncer = StateStreamDebouncer(appScope, clock)
     val baselineStore = BaselineStore(db)
     val reportGenerator = ReportGenerator(db, tracker, clock, cleaner)
@@ -99,6 +103,15 @@ class AppContainer(context: Context) {
         focusGuardEngine.start()
         performanceMonitor.bindToStreaming()
         appScope.launch { pomodoroEngine.recoverIfPossible() }          // T3-02 异常恢复
+        appScope.launch {
+            // 重启后把已保存的个人基线交给引擎，距离判定无需重新校准（T1-04）
+            visionEngine.setBaseline(baselineStore.current())
+        }
+        appScope.launch {
+            // 番茄期间自动开关相机：专注、休息阶段开启，其余阶段关闭
+            pomodoroEngine.state.map { it.phase }.distinctUntilChanged()
+                .collect { sessionCamera.setSessionWanted(SessionCameraGate.sessionNeedsCamera(it)) }
+        }
         appScope.launch { visionEngine.samples().collect { debouncer.onSample(it) } }
         appScope.launch { visionEngine.samples().collect { sampleRecorder.onSample(it) } }   // 采样落盘
         appScope.launch { visionEngine.samples().collect { calibrationSession.onVisionSample(it) } }

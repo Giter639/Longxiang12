@@ -39,8 +39,10 @@ class RiskEventWire(
         when (u) {
             is StateStreamDebouncer.UiState.Live -> handleLive(u)
             else -> {
+                // 断流或空闲时并不知道用户是否恢复：只关闭未决提醒，不记「风险解除」，
+                // 否则相机关闭、切到后台都会被算成 60 秒内恢复，虚增报告里的改善率。
                 lastEmitted = null
-                clearOpenReminders()
+                openReminders.clear()
             }
         }
     }
