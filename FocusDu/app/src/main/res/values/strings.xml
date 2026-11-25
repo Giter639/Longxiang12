@@ -46,6 +46,27 @@
     <string name="p03_issue_frames">有效帧不足，请固定设备后重试</string>
     <string name="p03_issue_camera">当前设备没有可用相机</string>
 
+    <!-- P04 个人基线（T1-04）：P03 校准完成后自动生成 -->
+    <string name="p04_owner">R4 基线 T1-04 · 已接通：校准完成即自动生成并生效</string>
+    <string name="p04_hint">基线记录的是你在 P03 校准时的自然坐姿，之后用它判断距离和姿态的变化。基线与机位、座位绑定，换了位置请重新校准。</string>
+    <string name="p04_ready">个人基线已就绪\n脸部尺度 %1$.3f｜俯仰 %2$.1f°｜偏航 %3$.1f°\n样本 %4$d 帧｜场景 %5$s</string>
+    <string name="p04_none">还没有个人基线：请先在 P03 完成坐姿校准。没有基线时不会判断用眼距离。</string>
+    <string name="p04_insufficient">校准已结束，但可用于生成基线的有效帧不足（%1$d / %2$d），请回到 P03 重新校准。</string>
+    <string name="p04_demo_baseline">写入演示基线（仅无相机调试用，会覆盖真实校准结果）</string>
+    <string name="p04_demo_written">已写入演示基线。它是一组固定数值，只适合没有相机时联调；真机使用请重新做 P03 校准。</string>
+    <string name="p04_go_focus">去开一轮番茄</string>
+
+    <!-- P07 实时状态（X18）：相机只在专注与休息阶段开启 -->
+    <string name="p07_owner">R1 接入 X18 · 状态源=MediaPipe 真引擎</string>
+    <string name="p07_hint">防抖显示与断流兜底已在 StateStreamDebouncer 实现，本页只负责展示。相机只在专注与休息阶段开启，其余时间关闭。</string>
+    <string name="p07_live">当前状态：%1$s｜置信度 %2$.2f｜距离档位 %3$s｜困倦 %4$s</string>
+    <string name="p07_interrupted">⚠ 检测中断（3 秒无有效帧）—— 界面保留最后状态：%1$s</string>
+    <string name="p07_camera_idle">相机未开启：开始一轮番茄后自动开启（休息阶段保持开启，暂停时关闭）</string>
+    <string name="p07_camera_starting">相机启动中…</string>
+    <string name="p07_camera_waiting">相机已开启，正在等待第一帧检测结果…</string>
+    <string name="p07_camera_unavailable">当前设备没有可用相机</string>
+    <string name="p07_camera_error">相机启动失败（%1$s）。请到 P01 确认已授予相机权限，然后把应用切到后台再切回来即可重试。</string>
+
     <!-- R3 权限与专注守护（T4-01/T4-03/T4-05） -->
     <string name="p01_owner">R3 权限 T4-01 · R2 引导文案 T7-01</string>
     <string name="p01_hint">以下权限逐项授权，可随时在系统设置中撤回。相机仅用于端侧状态识别；使用情况访问只判断前台应用；通知使用权只记录通知来源应用，不读取标题或正文。</string>

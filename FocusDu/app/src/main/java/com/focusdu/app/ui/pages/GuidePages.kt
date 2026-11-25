@@ -12,7 +12,9 @@ import androidx.lifecycle.lifecycleScope
 import com.focusdu.app.R
 import com.focusdu.app.guard.GuardPermission
 import com.focusdu.app.guard.GuardPermissionState
+import com.focusdu.app.ui.common.AppSessionViewModel
 import com.focusdu.app.ui.common.BasePageFragment
+import com.focusdu.app.ui.common.BaselineOutcome
 import com.focusdu.app.vision.CalibrationIssue
 import com.focusdu.app.vision.CalibrationState
 import com.google.android.material.button.MaterialButton
@@ -230,18 +232,38 @@ class P03CalibrationPage : BasePageFragment() {
         (value * resources.displayMetrics.density).toInt()
 }
 
-/** P04 校准完成/基线确认 —— R4 基线生成（T1-04，验收字段完整率 100%、重建偏差 <5%） */
+/** P04 校准完成/基线确认 —— R4 基线生成（T1-04，验收字段完整率 100%、重建偏差 <5%）；校准完成即自动生成并生效 */
 class P04BaselinePage : BasePageFragment() {
-    override val ownerTag = "R4 基线 T1-04 · 存储已就绪"
-    override val hintText = "TODO：把校准帧算成个人基线并 save()；本页展示基线字段供用户确认。下方按钮写入演示基线，用于无相机时联调。"
+    override val ownerTag: String
+        get() = getString(R.string.p04_owner)
+    override val hintText: String
+        get() = getString(R.string.p04_hint)
 
     override fun onPageReady(view: android.view.View) {
-        addButton("写入演示基线（联调用）") {
+        addButton(getString(R.string.p04_demo_baseline)) {
             viewLifecycleOwner.lifecycleScope.launch {
                 vm.saveDemoBaseline()
-                binding.pageStatus.text = "已写入演示基线：脸尺度0.30 / 俯角8° / 偏航3°（置信0.95，160帧）"
+                binding.pageStatus.text = getString(R.string.p04_demo_written)
             }
         }
-        addButton("去开一轮番茄") { navigateTo(R.id.p06PomodoroPage) }
+        addButton(getString(R.string.p04_go_focus)) { navigateTo(R.id.p06PomodoroPage) }
+
+        viewLifecycleOwner.lifecycleScope.launch {
+            binding.pageStatus.text = statusText()
+        }
+    }
+
+    private suspend fun statusText(): String {
+        vm.currentBaseline()?.let {
+            return getString(
+                R.string.p04_ready, it.faceScale, it.pitchDeg, it.yawDeg, it.sampleCount, it.sceneTag,
+            )
+        }
+        val outcome = vm.baselineOutcome.value
+        return if (outcome is BaselineOutcome.InsufficientFrames) {
+            getString(R.string.p04_insufficient, outcome.validFrames, outcome.required)
+        } else {
+            getString(R.string.p04_none)
+        }
     }
 }

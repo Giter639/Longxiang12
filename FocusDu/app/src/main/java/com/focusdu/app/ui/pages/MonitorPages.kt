@@ -12,14 +12,17 @@ import com.focusdu.app.reminder.ReminderAction
 import com.focusdu.app.ui.common.BasePageFragment
 import com.focusdu.app.ui.common.RingCountdownView
 import com.focusdu.app.ui.common.TrendLineChart
+import com.focusdu.app.vision.CameraState
+import com.focusdu.app.vision.CameraStatus
 import com.focusdu.app.vision.StateStreamDebouncer
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.launch
 import android.os.Handler
 import android.os.Looper
 
 /** P06 番茄钟 —— R1（T3-01 三模式 / T3-02 计时恢复）：环形倒计时 + 提醒边缘横幅 */
 class P06PomodoroPage : BasePageFragment() {
-    override val ownerTag = "R1 T3-01/T3-02 · 引擎+前台服务已接通（Mock 数据驱动）"
+    override val ownerTag = "R1 T3-01/T3-02 · 引擎+前台服务已接通"
     override val hintText = "环形倒计时显示剩余进度；持续风险触发提醒时顶部横幅边缘提示（冷却/压制规则在引擎内，验收有单测）。"
 
     private var pauseResumeBtn: com.google.android.material.button.MaterialButton? = null
@@ -110,20 +113,36 @@ class P06PomodoroPage : BasePageFragment() {
 
 /** P07 实时状态小窗 —— R1 接入层（X18，验收：断流 3s 内提示"检测中断"不白屏） */
 class P07VisionMonitorPage : BasePageFragment() {
-    override val ownerTag = "R1 接入 X18 · 状态源=Mock 引擎（R4 上线后自动切换）"
-    override val hintText = "TODO：换成六态可视化小窗（色彩+图标）。防抖显示与断流兜底已在 StateStreamDebouncer 实现，本页只渲染其 UiState。"
+    override val ownerTag: String
+        get() = getString(R.string.p07_owner)
+    override val hintText: String
+        get() = getString(R.string.p07_hint)
 
     override fun onPageReady(view: android.view.View) {
         viewLifecycleOwner.lifecycleScope.launch {
-            vm.visionUi.collect { u ->
-                binding.pageStatus.text = when (u) {
-                    is StateStreamDebouncer.UiState.Idle -> "等待数据…"
-                    is StateStreamDebouncer.UiState.Live ->
-                        "当前状态：${u.stateLabel}｜置信度 ${"%.2f".format(u.conf)}｜距离档位 ${u.distanceBand}｜困倦 ${u.drowsiness}"
-                    is StateStreamDebouncer.UiState.Interrupted ->
-                        "⚠ 检测中断（3 秒无有效帧）—— 断流兜底生效，界面保留最后状态：${u.lastState?.label ?: "—"}，不白屏"
-                }
+            combine(vm.visionUi, vm.cameraStatus) { ui, camera -> ui to camera }
+                .collect { (ui, camera) -> binding.pageStatus.text = statusText(ui, camera) }
+        }
+    }
+
+    /** 相机没在取流时先说明原因（没开番茄 / 启动中 / 启动失败），避免「等待数据」让人以为是卡死 */
+    private fun statusText(ui: StateStreamDebouncer.UiState, camera: CameraStatus): String {
+        if (camera.state != CameraState.STREAMING) {
+            return when (camera.state) {
+                CameraState.STARTING -> getString(R.string.p07_camera_starting)
+                CameraState.UNAVAILABLE -> getString(R.string.p07_camera_unavailable)
+                CameraState.ERROR -> getString(R.string.p07_camera_error, camera.errorCode ?: "-")
+                else -> getString(R.string.p07_camera_idle)
             }
+        }
+        return when (ui) {
+            is StateStreamDebouncer.UiState.Live -> getString(
+                R.string.p07_live, ui.stateLabel, ui.conf, ui.distanceBand, ui.drowsiness,
+            )
+            is StateStreamDebouncer.UiState.Interrupted -> getString(
+                R.string.p07_interrupted, ui.lastState?.label ?: "—",
+            )
+            StateStreamDebouncer.UiState.Idle -> getString(R.string.p07_camera_waiting)
         }
     }
 }

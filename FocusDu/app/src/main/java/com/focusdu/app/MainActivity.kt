@@ -26,8 +26,12 @@ class MainActivity : AppCompatActivity() {
         val navHost = supportFragmentManager.findFragmentById(R.id.nav_host) as NavHostFragment
         findViewById<MaterialToolbar>(R.id.toolbar).setupWithNavController(navHost.navController)
 
+        // 番茄期间的相机绑定到本页面的生命周期（退到后台自动停流，回前台自动恢复）
+        val container = (application as FocusDuApp).container
+        container.sessionCamera.attachOwner(this)
+
         lifecycleScope.launch {
-            (application as FocusDuApp).container.pomodoroEngine.state.collect { s ->
+            container.pomodoroEngine.state.collect { s ->
                 val prev = lastPhase
                 lastPhase = s.phase
                 if (prev == null || prev == s.phase) return@collect

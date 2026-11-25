@@ -20,9 +20,15 @@ import com.focusdu.app.reminder.RiskType
 import com.focusdu.app.vision.CalibrationIssue
 import com.focusdu.app.vision.CalibrationState
 import com.focusdu.app.vision.PersonalBaseline
+import com.focusdu.app.vision.algo.BaselineCalculator
+import com.focusdu.app.vision.algo.CalibrationFrameFeatures
+import com.focusdu.app.vision.toCalibrationFeatures
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import java.util.Calendar
@@ -66,26 +72,38 @@ class AppSessionViewModel(private val container: AppContainer) : ViewModel() {
     fun restCheck() = container.restValidator.lastCheck()
     fun currentAwayMs() = container.restValidator.currentAwayMs()
 
-    // ---- 相机校准（X11 / T1-02 / T1-03） ----
+    // ---- 相机校准（X11 / T1-02 / T1-03）与个人基线（T1-04） ----
     private var calibrationJob: Job? = null
+    private var calibrationFrames = mutableListOf<CalibrationFrameFeatures>()
+
+    private val _baselineOutcome = MutableStateFlow<BaselineOutcome>(BaselineOutcome.None)
+    val baselineOutcome: StateFlow<BaselineOutcome> = _baselineOutcome.asStateFlow()
+
+    init {
+        // 每计入一个有效采集帧，就用该帧时刻的分析样本作为基线特征：基线与校准的帧数口径一致，
+        // 校准一旦完成，基线所需的 150 帧就一定齐（相机帧率通常高于算法吞吐，只按分析样本数会不够）。
+        container.calibrationSession.onValidFrame = { sample ->
+            sample.toCalibrationFeatures()?.let { calibrationFrames.add(it) }
+        }
+    }
 
     fun startCalibration(owner: LifecycleOwner, previewView: PreviewView) {
         calibrationJob?.cancel()
+        calibrationFrames = mutableListOf()
         container.calibrationSession.start()
         calibrationJob = viewModelScope.launch {
             try {
-                container.cameraStreamer.start(
-                    lifecycleOwner = owner,
-                    previewView = previewView,
-                    targetFps = CALIBRATION_TARGET_FPS,
-                )
+                container.sessionCamera.startCalibration(owner, previewView, CALIBRATION_TARGET_FPS)
                 while (isActive && container.calibrationSession.state.value is CalibrationState.Running) {
                     container.calibrationSession.tick()
                     delay(CALIBRATION_TICK_MS)
                 }
-            } catch (_: Throwable) {
+            } catch (cancelled: CancellationException) {
+                throw cancelled // 离开页面或重新开始：状态由 stopCalibration 复位，不算「相机不可用」
+            } catch (_: Exception) {
                 container.calibrationSession.fail(CalibrationIssue.CAMERA_UNAVAILABLE)
             }
+            finalizeBaseline()
         }
     }
 
@@ -93,7 +111,26 @@ class AppSessionViewModel(private val container: AppContainer) : ViewModel() {
         calibrationJob?.cancel()
         calibrationJob = null
         container.calibrationSession.cancel()
-        container.cameraStreamer.stop()
+        container.sessionCamera.endCalibration()   // 番茄仍在进行则自动恢复无预览取流
+    }
+
+    /** 校准循环自然结束后调用。保存放在独立协程里：校准一完成就离开页面也不会丢基线 */
+    private fun finalizeBaseline() {
+        if (container.calibrationSession.state.value !is CalibrationState.Completed) return
+        val frames = calibrationFrames.toList()
+        viewModelScope.launch {
+            val baseline = BaselineCalculator.compute(frames, DEFAULT_SCENE_TAG, System.currentTimeMillis())
+            if (baseline == null) {
+                // 正常不会发生（有效帧已满 150）；万一发生要能解释，且不写残缺基线
+                _baselineOutcome.value = BaselineOutcome.InsufficientFrames(
+                    frames.size, BaselineCalculator.MIN_VALID_FRAMES,
+                )
+                return@launch
+            }
+            container.baselineStore.save(baseline)
+            container.visionEngine.setBaseline(baseline)
+            _baselineOutcome.value = BaselineOutcome.Ready(baseline)
+        }
     }
 
     // ---- 专注守护（T4-01/T4-03/T4-05） ----
@@ -147,19 +184,20 @@ class AppSessionViewModel(private val container: AppContainer) : ViewModel() {
         )
     }
 
-    // ---- 基线（T1-04 对接位） ----
+    // ---- 基线（T1-04） ----
     suspend fun currentBaseline(): PersonalBaseline? = container.baselineStore.current()
 
-    /** 演示用：写入一组假基线让 R4 的距离/姿态比较链路可以先跑起来 */
+    /** 演示用：写入一组固定基线（仅无相机联调）。真机使用请走 P03 校准，真实基线在采集完成时自动生成 */
     suspend fun saveDemoBaseline() {
-        container.baselineStore.save(
-            PersonalBaseline(
-                faceScale = 0.30f, pitchDeg = 8f, yawDeg = 3f, forwardDeg = 4f,
-                shoulderTiltDeg = 2f, lumFace = 128f, lumBackground = 110f,
-                confidence = 0.95f, sampleCount = 160,
-                createdAtWall = System.currentTimeMillis(), sceneTag = "书桌",
-            )
+        val baseline = PersonalBaseline(
+            faceScale = 0.30f, pitchDeg = 8f, yawDeg = 3f, forwardDeg = 4f,
+            shoulderTiltDeg = 2f, lumFace = 128f, lumBackground = 110f,
+            confidence = 0.95f, sampleCount = 160,
+            createdAtWall = System.currentTimeMillis(), sceneTag = DEFAULT_SCENE_TAG,
         )
+        container.baselineStore.save(baseline)
+        container.visionEngine.setBaseline(baseline)
+        _baselineOutcome.value = BaselineOutcome.Ready(baseline)
     }
 
     private fun calendarDayStart(): Long {
@@ -178,7 +216,18 @@ class AppSessionViewModel(private val container: AppContainer) : ViewModel() {
     }
 
     private companion object {
-        const val CALIBRATION_TARGET_FPS = 15
+        /** 校准取流帧率。150 帧要在 10 秒有效时长内采满：15fps 没有任何余量（相机预热就会超时），30fps 对应 5 秒档 */
+        const val CALIBRATION_TARGET_FPS = 30
         const val CALIBRATION_TICK_MS = 250L
+
+        /** 场景选择界面尚未提供（R2 待做），校准基线暂统一记为书桌 */
+        const val DEFAULT_SCENE_TAG = "书桌"
     }
+}
+
+/** 校准对个人基线的结果，P04 据此展示 */
+sealed interface BaselineOutcome {
+    data object None : BaselineOutcome
+    data class Ready(val baseline: PersonalBaseline) : BaselineOutcome
+    data class InsufficientFrames(val validFrames: Int, val required: Int) : BaselineOutcome
 }

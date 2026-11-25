@@ -25,6 +25,7 @@ import com.google.mediapipe.tasks.vision.core.RunningMode
 import com.google.mediapipe.tasks.vision.facelandmarker.FaceLandmarker
 import com.google.mediapipe.tasks.vision.facelandmarker.FaceLandmarkerResult
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.channels.BufferOverflow
 import kotlinx.coroutines.flow.Flow
@@ -42,7 +43,8 @@ import java.io.ByteArrayOutputStream
  * - 判定阈值全部在 vision/algo 各模块的 Config（DRAFT_v0.1）；
  * - 肩线检测降级：FaceLandmarker 无肩部关键点，本版 shoulderTiltDeg 恒 0（不困倦误判，T2-02 肩线子项留待 Pose 增强）；
  * - 模型资产 assets/face_landmarker.task，加载失败在构造期抛明确异常（协议第 6 节，不静默黑屏）；
- * - **默认绑定仍是 MockVisionEngine**（AppContainer 一行切换），真机联调（有真实人脸）时再切。
+ * - 默认绑定即本引擎（AppContainer）；联调异常时可一行切回 MockVisionEngine 对比；
+ * - 基线由上层经 [setBaseline] 注入，没有基线时不判距离（回退「正常」档）。
  */
 class MediaPipeVisionEngine(
     context: Context,
@@ -71,7 +73,9 @@ class MediaPipeVisionEngine(
 
     // —— 判定层（vision/algo），阈值都在各自 Config
     private var baseline: PersonalBaseline? = null
-    private var distanceMonitor: DistanceMonitor? = null
+
+    // setBaseline 在主线程调用，判定在 MediaPipe 回调线程读取，必须保证可见性
+    @Volatile private var distanceMonitor: DistanceMonitor? = null
     private val postureDetector = PostureDetector()
     private val blinkCounter = BlinkCounter()
     private val drowsinessDetector = DrowsinessDetector()
@@ -112,8 +116,8 @@ class MediaPipeVisionEngine(
         }
     }
 
-    /** 距离判定需要个人基线（P04 校准完成或演示写入后由上层注入） */
-    fun setBaseline(b: PersonalBaseline?) {
+    /** 距离判定需要个人基线（P03 校准完成、P04 写入或 App 重启恢复后由上层注入） */
+    override fun setBaseline(b: PersonalBaseline?) {
         baseline = b
         distanceMonitor = b?.let { DistanceMonitor(it).also { m -> m.reset() } }
     }
@@ -125,7 +129,8 @@ class MediaPipeVisionEngine(
 
     private fun ensureStarted() {
         if (job?.isActive == true) return
-        job = scope.launch {
+        // 每帧的格式转换与推理提交不能占用主线程（传入的 scope 是主线程域），放到后台线程收集
+        job = scope.launch(Dispatchers.Default) {
             cameraStreamer.frames().collect { frame -> processFrame(frame) }
         }
     }

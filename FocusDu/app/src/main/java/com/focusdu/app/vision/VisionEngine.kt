@@ -21,6 +21,12 @@ interface VisionEngine {
     /** 每秒 2~8 个样本（与取流帧率匹配）；实现方负责流的异常重启 */
     fun samples(): Flow<VisionSample>
     fun stop()
+
+    /**
+     * 注入个人基线（T1-04）：P03 校准完成、P04 写入或 App 重启恢复后由上层调用，null 表示无基线。
+     * 不依赖基线的实现（如 Mock）保持默认空实现。
+     */
+    fun setBaseline(baseline: PersonalBaseline?) {}
 }
 
 /**
