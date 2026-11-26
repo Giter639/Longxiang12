@@ -56,15 +56,16 @@ wb.save("任务卡.xlsx")
 
 **R3（采集/设备）**：
 - ✅ 已完成：`vision/CameraStreamer.kt` 内的 `CameraXStreamer`（8fps 取流，已绑定 AppContainer）、`vision/CalibrationSession.kt`（T1-02 校准采集 + T1-03 质量校验，P03 页已接）；
-- 🔲 待做：P10 拦截页逻辑（T4-03 触发<300ms / T4-05 紧急放行零误拦）、T4-01 权限引导补全（P01）、X12/X14 性能与兼容；
+- ✅ 代码已接入：P10 权限、前台应用检测、悬浮窗软拦截和紧急放行（`guard/`）；真机延迟和紧急功能仍需按任务卡验证；
+- 🔲 待真机：X12/X14 性能、兼容与现场验收；
 - 机型参数表在 `FocusDu/docs/R3机型适配与验证.md`。
 
 **R4（算法）**：
 - ✅ 已完成：`vision/MediaPipeVisionEngine`（FaceLandmarker LIVE_STREAM + NV21 解码 + 判定层调度）、
   `vision/FaceFeatureMapper`（纯映射，单测锚定欧拉角往返/faceScale/blendshape/亮度）、模型资产 `assets/face_landmarker.task`、
   判定层 `vision/algo/`（基线/距离/姿态/久坐/光照/离屏/眨眼/困倦/分级/六态融合）；
-- **当前绑定仍是 MockVisionEngine**（`AppContainer` 有注释好的切换行）——真机联调时：换绑定 + 调 `setBaseline` 注入基线 +
-  真机标定 `FaceFeatureMapper` 的 PITCH/YAW/FORWARD 符号常量（实测低头方向若相反只翻符号）；
+- **MediaPipeVisionEngine 已是默认绑定**；`AppContainer` 保留一行切换 Mock 的注释入口；
+- 真机联调时：验证 `setBaseline` 注入、真机标定 `FaceFeatureMapper` 的 PITCH/YAW/FORWARD 符号常量，并补齐精度报告；
 - ⚠️ 肩线检测降级：FaceLandmarker 无肩部关键点，`shoulderTiltDeg` 恒 0，T2-02 肩线子项待 MediaPipe Pose 增强；
 - 算法事件源（PostureDetector.activeEvent / SittingMonitor.sedentaryEvent）就绪后，用事件流替换 `reminder/RiskEventWire.kt`（当前是骨架演示接线）。
 
@@ -75,7 +76,7 @@ wb.save("任务卡.xlsx")
 
 ### 测试要求（CI 是硬闸门）
 
-- 改任何代码后必须本地跑：`cd FocusDu && ./gradlew :app:testDebugUnitTest`，当前 **47 个测试全绿**才算完成；
+- 改任何代码后必须本地跑：`cd FocusDu && ./gradlew :app:testDebugUnitTest`，当前 **106 个测试全绿**才算完成；
 - 测试是验收锚点：`PomodoroEngineTest`（息屏恢复<2s）、`ReminderEngineTest`（冷却/上限）、`MetricsCalculatorTest`（口径重算）、`RestValidatorTest`、`ReportAdvisorTest`、`CalibrationSessionTest` 等——改引擎行为必须同步更新/新增测试；
 - CI（`.github/workflows/ci.yml`）在每个 PR 上跑同一套；分支保护要求 **CI 绿 + 至少 1 人 Approve + 手动合并**，三者缺一不可（对 ADMIN 同样生效）。
 
@@ -83,7 +84,7 @@ wb.save("任务卡.xlsx")
 
 - **仓库必须克隆到纯英文路径**：中文路径下单元测试会因 AGP 已知 bug 报 ClassNotFoundException（APK 打包不受影响）；
 - `FocusDu/local.properties` 每台机器自己配 `sdk.dir`（已 gitignore）；
-- 双击根目录 `启动器.bat` 一键拉起模拟器/真机并打开 App（GBK 编码保存的 bat，编辑它时保持 GBK+CRLF，勿用 UTF-8 覆盖）；
+- 双击根目录 `启动器.bat` 一键构建、拉起 `PixelTest`/真机、安装最新 APK 并打开 App；它是 ASCII 批处理入口，实际逻辑在 `FocusDu/tools/launch_focusdu.ps1`；
 - `settings.gradle.kts` 有 `isCi` 切换：CI 环境直连官方源（runner 访问阿里云会超时），本地走阿里云镜像优先——改动仓库顺序要同时验证两种环境；
 - 首次跑测试前确认 JDK 17+（`java -version`）。
 
