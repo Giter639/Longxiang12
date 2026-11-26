@@ -20,7 +20,7 @@
 1. clone 本仓库（**放在纯英文路径**）
 2. Android Studio 打开 `FocusDu/`
 3. 双击根目录 `启动器.bat` 直接跑 App
-4. 每个 PR 由 CI 自动构建 + 47 个单测把关；合并需至少 1 人 Approve + 手动合并
+4. 每个 PR 从最新 `main` 创建并提交到 `main`，由 CI 自动构建 + 106 个单测把关；合并需 CI 绿、至少 1 人 Approve 和手动合并
 
 ## 分工
 
