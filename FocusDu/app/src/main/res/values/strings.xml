@@ -105,6 +105,100 @@
     <string name="p09_notification_summary_empty">专注期间没有捕获到应用通知</string>
     <string name="p09_notification_summary_item">%1$s：%2$d 条通知（原通知未清除）</string>
 
+    <!-- T7-01 首次引导（三屏） -->
+    <string name="onboarding_value_title">记录学习过程，也照顾学习状态</string>
+    <string name="onboarding_value_body">专注有度会把用眼距离、头部姿态、久坐和手机干扰放在同一条专注时间线里。出现持续风险时，它只给出低打扰提醒；每次专注结束后，在本机生成报告。</string>
+    <string name="onboarding_value_note">只做学习过程提醒，不做医学诊断，也不输出专注度或疲劳度分数。</string>
+
+    <string name="onboarding_flow_title">一次专注，五步完成</string>
+    <string name="onboarding_flow_body">1. 固定手机，让脸部完整进入画面。\n2. 保持自然坐姿，完成个人基线校准。\n3. 选择标准、深度或健康优先模式。\n4. 收到提醒时调整距离、坐姿或短暂休息。\n5. 结束后查看本轮报告和个人趋势。</string>
+    <string name="onboarding_flow_note">短时动作只记录，持续风险才提醒；提醒可以延后、静默或关闭。</string>
+
+    <string name="onboarding_privacy_title">数据尽量留在本机</string>
+    <string name="onboarding_privacy_body">摄像头画面只在设备端分析，原始视频不保存、不上传。各项权限由你逐项决定，也可以随时撤回。</string>
+    <string name="privacy_camera_title">摄像头</string>
+    <string name="privacy_camera_detail">只在校准和专注期间使用，已开启时有明确提示，可随时暂停。</string>
+    <string name="privacy_usage_title">使用情况访问</string>
+    <string name="privacy_usage_detail">只判断当前正在使用的应用，不读取屏幕内容。</string>
+    <string name="privacy_notification_title">通知使用权</string>
+    <string name="privacy_notification_detail">只记录哪个应用发过通知及时间，不读取标题、正文或联系人。</string>
+    <string name="privacy_overlay_title">悬浮窗</string>
+    <string name="privacy_overlay_detail">只用于显示可主动退出的专注提醒，不锁定手机。</string>
+    <string name="privacy_data_title">数据控制</string>
+    <string name="privacy_data_detail">报告和事件保存在本机，可删除；验证码、聊天和安全类通知不会被保存。</string>
+    <string name="onboarding_previous">上一步</string>
+    <string name="onboarding_next">下一步</string>
+    <string name="onboarding_start">开始使用</string>
+    <string name="onboarding_permissions_later">稍后设置权限</string>
+
+    <!-- T1-01 固定机位引导 -->
+    <string name="p02_intro">把手机放稳，校准才准</string>
+    <string name="p02_scene_label">选择本次学习场景</string>
+    <string name="p02_scene_desk">书桌学习</string>
+    <string name="p02_scene_bed">床头阅读</string>
+    <string name="p02_scene_study_room">自习室</string>
+    <string name="p02_step_distance">手机前摄距脸部约 50–70 cm。</string>
+    <string name="p02_step_height">前摄与眼睛大致同高，最多低 10 cm。</string>
+    <string name="p02_step_angle">手机向上仰 5–15°，不要只拍到额头。</string>
+    <string name="p02_step_frame">完整拍到脸部和肩线，画面不要裁切。</string>
+    <string name="p02_step_light">台灯放在左前方或右前方约 45°，避免背后强光和灯光直射镜头。</string>
+    <string name="p02_step_stable">支架双脚固定，摆好后不再移动手机。</string>
+    <string name="p02_scene_hint_desk">手机放在书本前方，镜头朝向自然坐姿时的脸部。</string>
+    <string name="p02_scene_hint_bed">使用床头夹或床边支架，保持坐姿，避免躺着拍摄。</string>
+    <string name="p02_scene_hint_study_room">使用折叠支架，避开过道，并标记支架位置。</string>
+    <string name="p02_common_issue_title">常见问题</string>
+    <string name="p02_issue_forehead">只看到额头：降低手机或减小上扬角度。</string>
+    <string name="p02_issue_half_face">半边脸缺失：把手机居中并后移。</string>
+    <string name="p02_issue_dark_face">脸部偏暗：把灯移到面部前方，避免背对窗户。</string>
+    <string name="p02_issue_shake">画面持续晃动：加固支架并重新开始校准。</string>
+    <string name="p02_ready">摆好了，开始校准</string>
+    <string name="p02_help">查看常见问题</string>
+
+    <!-- T5-01 三套提醒人格 -->
+    <string name="persona_gentle">温和陪伴</string>
+    <string name="persona_gentle_description">先照顾感受，再给一个小动作，不命令、不施压。</string>
+    <string name="persona_coach">教练引导</string>
+    <string name="persona_coach_description">给出明确动作和时长，帮助继续但不过度热情。</string>
+    <string name="persona_strict">简洁严格</string>
+    <string name="persona_strict_description">直接说明状态和动作，不羞辱、不夸张。</string>
+
+    <string name="reminder_distance_light_gentle">距离有点近，往后坐一点会更舒服。</string>
+    <string name="reminder_distance_light_coach">把手机放远一些，回到校准时的位置。</string>
+    <string name="reminder_distance_light_strict">距离偏近，请后移。</string>
+    <string name="reminder_distance_sustained_gentle">已经持续近距离用眼，拉远一点，短暂放松再继续。</string>
+    <string name="reminder_distance_sustained_coach">先后移到正常距离，放松片刻，再回到当前任务。</string>
+    <string name="reminder_distance_sustained_strict">持续距离过近，立即后移。</string>
+    <string name="reminder_posture_light_gentle">头有点低了，轻轻抬起头来。</string>
+    <string name="reminder_posture_light_coach">抬头坐直，让耳朵回到肩膀上方。</string>
+    <string name="reminder_posture_light_strict">低头了，请坐直。</string>
+    <string name="reminder_posture_sustained_gentle">身体有些前倾，靠回椅背调整一下。</string>
+    <string name="reminder_posture_sustained_coach">背靠椅背，双肩放松，视线保持在前方。</string>
+    <string name="reminder_posture_sustained_strict">持续前倾，立即坐正。</string>
+    <string name="reminder_drowsiness_light_gentle">眼睛需要缓一缓，看远处几秒再继续。</string>
+    <string name="reminder_drowsiness_light_coach">看向远处约 20 秒，再回到任务。</string>
+    <string name="reminder_drowsiness_light_strict">远眺 20 秒。</string>
+    <string name="reminder_drowsiness_moderate_gentle">闭眼时间有些长，起来活动一下再继续。</string>
+    <string name="reminder_drowsiness_moderate_coach">离屏走动 1 分钟，回来后重新坐稳。</string>
+    <string name="reminder_drowsiness_moderate_strict">暂停活动，起身 1 分钟。</string>
+    <string name="reminder_drowsiness_severe_gentle">现在看起来比较困倦，建议停下来休息一会儿。</string>
+    <string name="reminder_drowsiness_severe_coach">停止当前任务，离屏休息 1–2 分钟再决定是否继续。</string>
+    <string name="reminder_drowsiness_severe_strict">停止专注，立即休息。</string>
+    <string name="reminder_light_dark_gentle">画面偏暗，开一盏灯会更容易看清。</string>
+    <string name="reminder_light_dark_coach">打开台灯，把主光放在书桌和脸部前方。</string>
+    <string name="reminder_light_dark_strict">光线偏暗，请开灯。</string>
+    <string name="reminder_light_backlight_gentle">背后光线有点强，调整座位或光源会更舒服。</string>
+    <string name="reminder_light_backlight_coach">避开背后的强光，让光源落在脸部前方。</string>
+    <string name="reminder_light_backlight_strict">逆光，请调整座位。</string>
+    <string name="reminder_light_uneven_gentle">画面里有强反光，调整台灯角度或避开直射光。</string>
+    <string name="reminder_light_uneven_coach">把光源移到侧前方，减少屏幕和人脸反光。</string>
+    <string name="reminder_light_uneven_strict">眩光或光照不均，请调整灯光。</string>
+    <string name="reminder_sedentary_gentle">已经坐了一阵，起身走动一下会更舒服。</string>
+    <string name="reminder_sedentary_coach">离座活动 1–2 分钟，回来后重新调整坐姿。</string>
+    <string name="reminder_sedentary_strict">久坐，请立即起身。</string>
+    <string name="reminder_off_screen_gentle">暂时没看到你，计时会继续；回来后我们接着记录。</string>
+    <string name="reminder_off_screen_coach">离开屏幕期间计时继续，回到座位后看向镜头。</string>
+    <string name="reminder_off_screen_strict">检测到离屏，计时未暂停。</string>
+
     <!-- 占位提示（骨架期展示，各负责人实现后替换） -->
     <string name="tpl_todo_prefix">本页为骨架模板，</string>
 </resources>

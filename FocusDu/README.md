@@ -46,13 +46,13 @@ PomodoroEngine(单调时钟+检查点恢复) → 前台服务 → FOCUS→BREAK 
 | T1-04 | 个人基线 | `vision/Baseline` + `BaselineCalculator`（MediaPipe 真引擎消费） | ✅ 代码已接入 |
 | T7-03 | Room 存储与容量滚动 | `data/db/` + `data/RollingCleaner` | ✅ |
 | T6-01/02/03 | 报告七区块卡片 / 指标引擎 / 历史对比 | `report/`（`ReportGenerator.buildSections` + `MetricsCalculator` + `HistoryComparator`） | ✅ |
-| T5-01/T7-01 | 提醒人格与引导文案 | `res/values/strings.xml` | 🟡 R2 文案待填 |
+| T5-01/T7-01 | 提醒人格、机位引导与首次引导文案 | `res/values/strings.xml` | 🟡 文案已完成，待 X19/X20/X21 UI 接入 |
 | T4-03/T4-05 | 限制应用拦截页 + 紧急放行 | `ui/pages/P10GuardInterceptPage` + `guard/` | ✅ 代码已接入，待 OPPO 真机验收 |
 | T2-01~10 | 7 类视觉指标 + 六态融合 | `MediaPipeVisionEngine` + `vision/algo/` | ⚠️ 已接入，精度指标待真机验证 |
 
 ## 三人接入指南
 
-**R3（采集/设备）——X11 已完成 ✅**：`CameraXStreamer` 已实现并绑定，P03 校准采集链路已通（含质量校验，机型参数见 `docs/R3机型适配与验证.md`）。剩余：P10 拦截页逻辑（T4-03 触发<300ms / T4-05 紧急放行零误拦）、T4-01 权限引导补全、X12/X14 性能与兼容。
+**R3（采集/设备）——代码已完成，待真机验收**：CameraX、校准、权限、P10 前台检测与软拦截均已接入；剩余重点是 OPPO 真机下的延迟、紧急放行、性能和兼容验证。
 
 **R4（算法）——已接入，待真机标定**：`MediaPipeVisionEngine` 已成为默认绑定，模型资产与判定层均已接入 `main`。后续重点是在 arm64 OPPO 真机验证距离、姿态、光照、眨眼、困倦等精度指标，并完成肩线 Pose 增强。
 
