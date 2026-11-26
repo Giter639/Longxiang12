@@ -45,7 +45,7 @@ PomodoroEngine(单调时钟+检查点恢复) → 前台服务 → FOCUS→BREAK 
 | T1-04 | 个人基线 | `vision/Baseline`（`baselineStore`，P04 演示写入） | 🟡 R4 待接 |
 | T7-03 | Room 存储与容量滚动 | `data/db/` + `data/RollingCleaner` | ✅ |
 | T6-01/02/03 | 报告七区块卡片 / 指标引擎 / 历史对比 | `report/`（`ReportGenerator.buildSections` + `MetricsCalculator` + `HistoryComparator`） | ✅ |
-| T5-01/T7-01 | 提醒人格与引导文案 | `res/values/strings.xml` | 🟡 R2 文案待填 |
+| T5-01/T7-01 | 提醒人格、机位引导与首次引导文案 | `res/values/strings.xml` | 🟡 文案已完成，待 X19/X20/X21 UI 接入 |
 | T4-03/T4-05 | 限制应用拦截页 + 紧急放行 | `ui/pages/P10GuardInterceptPage` | 🟡 R3 待接 |
 | T2-01~10 | 7 类视觉指标 + 六态融合 | `vision/protocol/VisionModels`（Mock 引擎当前驱动） | 🟡 R4 待接 |
 
