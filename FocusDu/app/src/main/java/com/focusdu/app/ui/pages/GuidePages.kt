@@ -3,8 +3,11 @@ package com.focusdu.app.ui.pages
 import android.Manifest
 import android.content.pm.PackageManager
 import android.os.Build
+import android.os.Bundle
+import android.view.Gravity
 import android.view.ViewGroup
 import android.widget.LinearLayout
+import android.widget.TextView
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.camera.view.PreviewView
 import androidx.core.content.ContextCompat
@@ -33,16 +36,97 @@ class P01GuidePage : BasePageFragment() {
         get() = getString(R.string.p01_hint)
 
     private val permissionButtons = mutableMapOf<GuardPermission, MaterialButton>()
+    private val expandedPrivacy = mutableSetOf<Int>()
+    private var currentScreen = 0
+
+    private lateinit var screenTitle: TextView
+    private lateinit var screenBody: TextView
+    private lateinit var screenNote: TextView
+    private lateinit var progressText: TextView
+    private lateinit var privacyContainer: LinearLayout
+    private lateinit var permissionContainer: LinearLayout
+    private lateinit var privacyDetails: List<TextView>
+    private lateinit var previousButton: MaterialButton
+    private lateinit var nextButton: MaterialButton
+
     private val runtimePermissionLauncher = registerForActivityResult(
         ActivityResultContracts.RequestPermission()
     ) { refreshPermissionUi() }
 
-    override fun onPageReady(view: android.view.View) {
-        GuardPermission.entries.forEach { permission ->
-            val button = addButton("") { onPermissionClicked(permission) }
-            permissionButtons[permission] = button
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        currentScreen = savedInstanceState?.getInt(KEY_SCREEN, 0) ?: 0
+        savedInstanceState?.getBooleanArray(KEY_PRIVACY)?.forEachIndexed { index, expanded ->
+            if (expanded) expandedPrivacy += index
         }
-        addButton(getString(R.string.p01_next)) { navigateTo(R.id.p02PositioningPage) }
+    }
+
+    override fun onPageReady(view: android.view.View) {
+        binding.pageHint.visibility = android.view.View.GONE
+
+        progressText = TextView(requireContext()).apply {
+            gravity = Gravity.END
+            textSize = 13f
+        }
+        screenTitle = TextView(requireContext()).apply {
+            textSize = 24f
+            setTextColor(0xFF173B32.toInt())
+            setPadding(0, dp(12), 0, dp(8))
+        }
+        screenBody = TextView(requireContext()).apply {
+            textSize = 16f
+            setLineSpacing(0f, 1.25f)
+        }
+        screenNote = TextView(requireContext()).apply {
+            textSize = 13f
+            setTextColor(0xFF63736D.toInt())
+            setPadding(0, dp(12), 0, 0)
+        }
+        privacyContainer = LinearLayout(requireContext()).apply {
+            orientation = LinearLayout.VERTICAL
+            setPadding(0, dp(12), 0, 0)
+        }
+        privacyDetails = buildPrivacyItems()
+        permissionContainer = LinearLayout(requireContext()).apply {
+            orientation = LinearLayout.VERTICAL
+            setPadding(0, dp(20), 0, 0)
+        }
+        buildPermissionButtons()
+
+        val navigation = LinearLayout(requireContext()).apply {
+            orientation = LinearLayout.HORIZONTAL
+            gravity = Gravity.CENTER_VERTICAL
+            setPadding(0, dp(20), 0, 0)
+            layoutParams = LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                ViewGroup.LayoutParams.WRAP_CONTENT,
+            )
+        }
+        previousButton = pageButton(getString(R.string.onboarding_previous)) {
+            if (currentScreen > 0) {
+                currentScreen--
+                renderScreen()
+            }
+        }
+        nextButton = pageButton("") {
+            if (currentScreen < LAST_SCREEN) {
+                currentScreen++
+                renderScreen()
+            } else {
+                navigateTo(R.id.p02PositioningPage)
+            }
+        }
+        navigation.addView(previousButton, weightedButtonParams())
+        navigation.addView(nextButton, weightedButtonParams(start = dp(12)))
+
+        binding.pageBody.addView(progressText)
+        binding.pageBody.addView(screenTitle)
+        binding.pageBody.addView(screenBody)
+        binding.pageBody.addView(screenNote)
+        binding.pageBody.addView(privacyContainer)
+        binding.pageBody.addView(permissionContainer)
+        binding.pageBody.addView(navigation)
+        renderScreen()
         refreshPermissionUi()
     }
 
@@ -89,6 +173,9 @@ class P01GuidePage : BasePageFragment() {
         }
         val missing = snapshot.count { it.value.state != GuardPermissionState.GRANTED }
         binding.pageStatus.text = getString(R.string.p01_permission_summary, missing)
+        binding.pageStatus.visibility =
+            if (currentScreen == LAST_SCREEN) android.view.View.VISIBLE
+            else android.view.View.GONE
     }
 
     private fun permissionName(permission: GuardPermission): String = getString(
@@ -108,6 +195,133 @@ class P01GuidePage : BasePageFragment() {
             GuardPermissionState.REVOKED -> R.string.permission_revoked
         }
     )
+
+    override fun onSaveInstanceState(outState: Bundle) {
+        super.onSaveInstanceState(outState)
+        outState.putInt(KEY_SCREEN, currentScreen)
+        outState.putBooleanArray(
+            KEY_PRIVACY,
+            BooleanArray(PRIVACY_ITEMS.size) { it in expandedPrivacy },
+        )
+    }
+
+    private fun buildPermissionButtons() {
+        GuardPermission.entries.forEach { permission ->
+            val button = pageButton("") { onPermissionClicked(permission) }
+            permissionButtons[permission] = button
+            permissionContainer.addView(button)
+        }
+        permissionContainer.addView(
+            pageButton(getString(R.string.onboarding_permissions_later)) {
+                navigateTo(R.id.p02PositioningPage)
+            }
+        )
+    }
+
+    private fun buildPrivacyItems(): List<TextView> {
+        val details = mutableListOf<TextView>()
+        PRIVACY_ITEMS.forEachIndexed { index, (titleRes, detailRes) ->
+            val header = TextView(requireContext()).apply {
+                text = getString(titleRes)
+                textSize = 16f
+                setPadding(0, dp(12), 0, dp(8))
+                isClickable = true
+                setTextColor(0xFF2E7D6B.toInt())
+                setOnClickListener {
+                    if (!expandedPrivacy.add(index)) expandedPrivacy.remove(index)
+                    details[index].visibility =
+                        if (index in expandedPrivacy) android.view.View.VISIBLE
+                        else android.view.View.GONE
+                }
+            }
+            val detail = TextView(requireContext()).apply {
+                text = getString(detailRes)
+                textSize = 14f
+                setLineSpacing(0f, 1.2f)
+                setTextColor(0xFF4C5A55.toInt())
+                visibility =
+                    if (index in expandedPrivacy) android.view.View.VISIBLE
+                    else android.view.View.GONE
+            }
+            privacyContainer.addView(header)
+            privacyContainer.addView(detail)
+            details += detail
+        }
+        return details
+    }
+
+    private fun renderScreen() {
+        val (titleRes, bodyRes, noteRes) = when (currentScreen) {
+            0 -> Triple(
+                R.string.onboarding_value_title,
+                R.string.onboarding_value_body,
+                R.string.onboarding_value_note,
+            )
+            1 -> Triple(
+                R.string.onboarding_flow_title,
+                R.string.onboarding_flow_body,
+                R.string.onboarding_flow_note,
+            )
+            else -> Triple(
+                R.string.onboarding_privacy_title,
+                R.string.onboarding_privacy_body,
+                0,
+            )
+        }
+        progressText.text = "${currentScreen + 1} / ${LAST_SCREEN + 1}"
+        screenTitle.setText(titleRes)
+        screenBody.setText(bodyRes)
+        screenNote.visibility =
+            if (noteRes == 0) android.view.View.GONE else android.view.View.VISIBLE
+        if (noteRes != 0) screenNote.setText(noteRes)
+        privacyContainer.visibility =
+            if (currentScreen == LAST_SCREEN) android.view.View.VISIBLE
+            else android.view.View.GONE
+        permissionContainer.visibility =
+            if (currentScreen == LAST_SCREEN) android.view.View.VISIBLE
+            else android.view.View.GONE
+        binding.pageStatus.visibility =
+            if (currentScreen == LAST_SCREEN) android.view.View.VISIBLE
+            else android.view.View.GONE
+        previousButton.visibility =
+            if (currentScreen == 0) android.view.View.INVISIBLE else android.view.View.VISIBLE
+        nextButton.setText(
+            if (currentScreen == LAST_SCREEN) R.string.onboarding_start
+            else R.string.onboarding_next
+        )
+    }
+
+    private fun pageButton(label: String = "", onClick: () -> Unit): MaterialButton =
+        MaterialButton(requireContext()).apply {
+            text = label
+            isAllCaps = false
+            setOnClickListener { onClick() }
+            layoutParams = LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                ViewGroup.LayoutParams.WRAP_CONTENT,
+            ).apply { topMargin = dp(8) }
+        }
+
+    private fun weightedButtonParams(start: Int = 0) =
+        LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f).apply {
+            marginStart = start
+        }
+
+    private fun dp(value: Int): Int =
+        (value * resources.displayMetrics.density).toInt()
+
+    private companion object {
+        const val LAST_SCREEN = 2
+        const val KEY_SCREEN = "p01_screen"
+        const val KEY_PRIVACY = "p01_privacy"
+        val PRIVACY_ITEMS = listOf(
+            R.string.privacy_camera_title to R.string.privacy_camera_detail,
+            R.string.privacy_usage_title to R.string.privacy_usage_detail,
+            R.string.privacy_notification_title to R.string.privacy_notification_detail,
+            R.string.privacy_overlay_title to R.string.privacy_overlay_detail,
+            R.string.privacy_data_title to R.string.privacy_data_detail,
+        )
+    }
 }
 
 /** P02 固定机位引导 —— R2 示意图（T1-01，验收 3 人实测 2 人一次摆对）；R3 支架摆位图（X12） */
