@@ -15,6 +15,7 @@ import com.focusdu.app.pomodoro.PomodoroEngine
 import com.focusdu.app.pomodoro.PomodoroStore
 import com.focusdu.app.pomodoro.RoomPomodoroStore
 import com.focusdu.app.reminder.ReminderEngine
+import com.focusdu.app.reminder.ReminderPreferences
 import com.focusdu.app.reminder.RiskEventWire
 import com.focusdu.app.report.ReportGenerator
 import com.focusdu.app.report.RestValidator
@@ -59,6 +60,7 @@ class AppContainer(context: Context) {
     val pomodoroStore: PomodoroStore = RoomPomodoroStore(db)
 
     val reminderEngine = ReminderEngine(clock, tracker)
+    val reminderPreferences = ReminderPreferences(appContext)
     val pomodoroEngine = PomodoroEngine(clock, appScope, tracker, pomodoroStore)
     val guardPermissions = GuardPermissions(appContext)
     val guardSettings = GuardSettings(appContext)

@@ -161,6 +161,9 @@
     <string name="persona_coach_description">给出明确动作和时长，帮助继续但不过度热情。</string>
     <string name="persona_strict">简洁严格</string>
     <string name="persona_strict_description">直接说明状态和动作，不羞辱、不夸张。</string>
+    <string name="persona_selected_summary">当前人格：%1$s\n%2$s</string>
+    <string name="p11_owner">T5-01 文案 · X20 人格接入</string>
+    <string name="p11_hint">选择提醒语气。文案只描述可观察状态并给出一个可执行动作，所有提醒都可以延后、静默或关闭。</string>
 
     <string name="reminder_distance_light_gentle">距离有点近，往后坐一点会更舒服。</string>
     <string name="reminder_distance_light_coach">把手机放远一些，回到校准时的位置。</string>

@@ -6,10 +6,12 @@ import com.focusdu.app.R
 import com.focusdu.app.guard.GuardPermission
 import com.focusdu.app.guard.GuardPermissionState
 import com.focusdu.app.guard.LaunchableApp
+import com.focusdu.app.reminder.ReminderPersona
 import com.focusdu.app.ui.common.BasePageFragment
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import com.google.android.material.button.MaterialButton
 
 /**
  * P10–P11：专注守护与个性化。
@@ -124,10 +126,52 @@ class P10GuardInterceptPage : BasePageFragment() {
 
 /** P11 提醒人格与主题 —— R2 文案（T5-01）；AI 只生成受约束参数、用户预览确认后应用 */
 class P11PersonaThemePage : BasePageFragment() {
-    override val ownerTag = "R2 人格文案 T5-01 · 可选增强：AI 主题参数"
-    override val hintText = "TODO：温和/教练式/简洁严格三套人格选择，音色/语速/番茄钟主题调整；AI 生成主题参数必须经用户预览确认后才应用。"
+    override val ownerTag: String
+        get() = getString(R.string.p11_owner)
+    override val hintText: String
+        get() = getString(R.string.p11_hint)
+
+    private val personaButtons = mutableMapOf<ReminderPersona, MaterialButton>()
 
     override fun onPageReady(view: android.view.View) {
-        addButton("返回首页") { navigateTo(R.id.p05HomePage) }
+        ReminderPersona.entries.forEach { persona ->
+            val button = addButton(personaLabel(persona)) {
+                vm.setReminderPersona(persona)
+            }
+            personaButtons[persona] = button
+        }
+        addButton(getString(R.string.p10_back_home)) { navigateTo(R.id.p05HomePage) }
+
+        viewLifecycleOwner.lifecycleScope.launch {
+            vm.reminderPersona.collect { selected ->
+                personaButtons.forEach { (persona, button) ->
+                    button.setBackgroundColor(
+                        if (persona == selected) 0xFFDCEEE8.toInt()
+                        else android.graphics.Color.TRANSPARENT
+                    )
+                }
+                binding.pageStatus.text = getString(
+                    R.string.persona_selected_summary,
+                    personaLabel(selected),
+                    personaDescription(selected),
+                )
+            }
+        }
     }
+
+    private fun personaLabel(persona: ReminderPersona): String = getString(
+        when (persona) {
+            ReminderPersona.GENTLE -> R.string.persona_gentle
+            ReminderPersona.COACH -> R.string.persona_coach
+            ReminderPersona.STRICT -> R.string.persona_strict
+        }
+    )
+
+    private fun personaDescription(persona: ReminderPersona): String = getString(
+        when (persona) {
+            ReminderPersona.GENTLE -> R.string.persona_gentle_description
+            ReminderPersona.COACH -> R.string.persona_coach_description
+            ReminderPersona.STRICT -> R.string.persona_strict_description
+        }
+    )
 }

@@ -17,6 +17,8 @@ import com.focusdu.app.guard.LaunchableApp
 import com.focusdu.app.pomodoro.PomodoroMode
 import com.focusdu.app.pomodoro.PomodoroService
 import com.focusdu.app.reminder.RiskType
+import com.focusdu.app.reminder.ReminderMessageResolver
+import com.focusdu.app.reminder.ReminderPersona
 import com.focusdu.app.vision.CalibrationIssue
 import com.focusdu.app.vision.CalibrationState
 import com.focusdu.app.vision.PersonalBaseline
@@ -45,6 +47,7 @@ class AppSessionViewModel(private val container: AppContainer) : ViewModel() {
     val cameraStatus = container.cameraStreamer.status
     val calibration = container.calibrationSession.state
     val restrictedPackages = container.guardSettings.restrictedPackages
+    val reminderPersona = container.reminderPreferences.persona
 
     // ---- 番茄（T3-01/T3-02） ----
     fun startPomodoro(mode: PomodoroMode) = viewModelScope.launch {
@@ -66,6 +69,13 @@ class AppSessionViewModel(private val container: AppContainer) : ViewModel() {
     fun snooze(type: RiskType) = container.reminderEngine.snooze(type)
     fun setSilent(enabled: Boolean) { container.reminderEngine.silentMode = enabled }
     fun setDefer(enabled: Boolean) { container.reminderEngine.deferMode = enabled }
+    fun setReminderPersona(persona: ReminderPersona) =
+        container.reminderPreferences.setPersona(persona)
+
+    fun reminderText(event: com.focusdu.app.reminder.RiskEvent): String =
+        container.appContext.getString(
+            ReminderMessageResolver.resourceId(event, reminderPersona.value)
+        )
     fun drainDeferredForRest() = container.reminderEngine.drainDeferredForRest()
 
     // ---- 休息恢复校验（T3-04） ----
