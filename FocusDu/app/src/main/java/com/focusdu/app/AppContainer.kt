@@ -1,6 +1,7 @@
 package com.focusdu.app
 
 import android.content.Context
+import android.util.Log
 import com.focusdu.app.core.AndroidMonotonicClock
 import com.focusdu.app.core.MonotonicClock
 import com.focusdu.app.data.RollingCleaner
@@ -34,6 +35,8 @@ import com.focusdu.app.vision.StateSpanLogger
 import com.focusdu.app.vision.StateStreamDebouncer
 import com.focusdu.app.vision.ScenePreferences
 import com.focusdu.app.vision.VisionEngine
+import com.focusdu.app.vision.VisionEngineFactory
+import com.focusdu.app.vision.VisionEngineMode
 import com.focusdu.app.vision.VisionSampleRecorder
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -87,10 +90,21 @@ class AppContainer(context: Context) {
         clock = clock,
         cameraStreamer = cameraStreamer,
     )
-    // R4 真引擎（MediaPipe FaceLandmarker）为默认绑定。联调异常时把下一行的注释互换即可切回
-    // MockVisionEngine（按剧本输出假数据），其余代码不用动。
-    val visionEngine: VisionEngine = MediaPipeVisionEngine(appContext, clock, appScope, cameraStreamer)
-    // val visionEngine: VisionEngine = MockVisionEngine(clock, appScope)
+    // R4 真引擎优先。arm64 真机使用 MediaPipe；x86_64 模拟器缺少原生 JNI 时自动回退 Mock，
+    // P07 会明确显示“模拟器兼容模式（Mock）”，不把演示数据伪装成真实识别。
+    private val visionBinding = VisionEngineFactory.bind(
+        mediaPipeFactory = {
+            MediaPipeVisionEngine(appContext, clock, appScope, cameraStreamer)
+        },
+        mockFactory = {
+            MockVisionEngine(clock, appScope)
+        },
+        onFallback = { error ->
+            Log.e(VISION_TAG, "MediaPipe unavailable; using Mock fallback", error)
+        },
+    )
+    val visionEngine: VisionEngine = visionBinding.engine
+    val visionMode: VisionEngineMode = visionBinding.mode
     val sessionCamera = SessionCameraGate(cameraStreamer, appScope)
     val debouncer = StateStreamDebouncer(appScope, clock)
     val baselineStore = BaselineStore(db)
@@ -134,5 +148,9 @@ class AppContainer(context: Context) {
                 (u as? StateStreamDebouncer.UiState.Live)?.let { restValidator.onVisionState(it.state) }
             }
         }
+    }
+
+    private companion object {
+        const val VISION_TAG = "FocusDuVision"
     }
 }

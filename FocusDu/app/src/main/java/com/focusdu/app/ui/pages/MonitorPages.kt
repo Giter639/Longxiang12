@@ -17,6 +17,7 @@ import com.focusdu.app.ui.common.TrendLineChart
 import com.focusdu.app.vision.CameraState
 import com.focusdu.app.vision.CameraStatus
 import com.focusdu.app.vision.StateStreamDebouncer
+import com.focusdu.app.vision.VisionEngineMode
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.launch
 import android.os.Handler
@@ -122,22 +123,31 @@ class P07VisionMonitorPage : BasePageFragment() {
 
     override fun onPageReady(view: android.view.View) {
         viewLifecycleOwner.lifecycleScope.launch {
-            combine(vm.visionUi, vm.cameraStatus) { ui, camera -> ui to camera }
-                .collect { (ui, camera) -> binding.pageStatus.text = statusText(ui, camera) }
+            combine(vm.visionUi, vm.cameraStatus) { ui, camera ->
+                Triple(ui, camera, vm.visionMode)
+            }.collect { (ui, camera, mode) ->
+                binding.pageStatus.text = statusText(ui, camera, mode)
+            }
         }
     }
 
     /** 相机没在取流时先说明原因（没开番茄 / 启动中 / 启动失败），避免「等待数据」让人以为是卡死 */
-    private fun statusText(ui: StateStreamDebouncer.UiState, camera: CameraStatus): String {
+    private fun statusText(
+        ui: StateStreamDebouncer.UiState,
+        camera: CameraStatus,
+        mode: VisionEngineMode,
+    ): String {
+        val modeText = getString(R.string.p07_runtime_mode, modeLabel(mode))
         if (camera.state != CameraState.STREAMING) {
-            return when (camera.state) {
+            val base = when (camera.state) {
                 CameraState.STARTING -> getString(R.string.p07_camera_starting)
                 CameraState.UNAVAILABLE -> getString(R.string.p07_camera_unavailable)
                 CameraState.ERROR -> getString(R.string.p07_camera_error, camera.errorCode ?: "-")
                 else -> getString(R.string.p07_camera_idle)
             }
+            return "$base\n$modeText"
         }
-        return when (ui) {
+        val base = when (ui) {
             is StateStreamDebouncer.UiState.Live -> getString(
                 R.string.p07_live, ui.stateLabel, ui.conf, ui.distanceBand, ui.drowsiness,
             )
@@ -146,7 +156,16 @@ class P07VisionMonitorPage : BasePageFragment() {
             )
             StateStreamDebouncer.UiState.Idle -> getString(R.string.p07_camera_waiting)
         }
+        return "$base\n$modeText"
     }
+
+    private fun modeLabel(mode: VisionEngineMode): String = getString(
+        when (mode) {
+            VisionEngineMode.MEDIAPIPE -> R.string.p07_mode_mediapipe
+            VisionEngineMode.MOCK_FALLBACK -> R.string.p07_mode_mock_fallback
+            VisionEngineMode.MOCK -> R.string.p07_mode_mock
+        }
+    )
 }
 
 /** P08 提醒中心 —— R1 引擎（T3-03）+ R2 文案（T5-01，验收：36 条文案齐全无医学化表述） */
