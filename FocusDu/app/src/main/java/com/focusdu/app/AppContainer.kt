@@ -32,6 +32,7 @@ import com.focusdu.app.vision.MediaPipeVisionEngine
 import com.focusdu.app.vision.SessionCameraGate
 import com.focusdu.app.vision.StateSpanLogger
 import com.focusdu.app.vision.StateStreamDebouncer
+import com.focusdu.app.vision.ScenePreferences
 import com.focusdu.app.vision.VisionEngine
 import com.focusdu.app.vision.VisionSampleRecorder
 import kotlinx.coroutines.CoroutineScope
@@ -79,6 +80,7 @@ class AppContainer(context: Context) {
 
     val cameraStreamer: CameraStreamer = CameraXStreamer(appContext, clock) // ← R3 接入点
     val calibrationSession = CalibrationSession(clock)
+    val scenePreferences = ScenePreferences(appContext)
     val performanceMonitor = DevicePerformanceMonitor(
         context = appContext,
         scope = appScope,

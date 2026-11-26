@@ -22,6 +22,7 @@ import com.focusdu.app.reminder.ReminderPersona
 import com.focusdu.app.vision.CalibrationIssue
 import com.focusdu.app.vision.CalibrationState
 import com.focusdu.app.vision.PersonalBaseline
+import com.focusdu.app.vision.TrainingScene
 import com.focusdu.app.vision.algo.BaselineCalculator
 import com.focusdu.app.vision.algo.CalibrationFrameFeatures
 import com.focusdu.app.vision.toCalibrationFeatures
@@ -48,6 +49,7 @@ class AppSessionViewModel(private val container: AppContainer) : ViewModel() {
     val calibration = container.calibrationSession.state
     val restrictedPackages = container.guardSettings.restrictedPackages
     val reminderPersona = container.reminderPreferences.persona
+    val trainingScene = container.scenePreferences.scene
 
     // ---- 番茄（T3-01/T3-02） ----
     fun startPomodoro(mode: PomodoroMode) = viewModelScope.launch {
@@ -129,7 +131,11 @@ class AppSessionViewModel(private val container: AppContainer) : ViewModel() {
         if (container.calibrationSession.state.value !is CalibrationState.Completed) return
         val frames = calibrationFrames.toList()
         viewModelScope.launch {
-            val baseline = BaselineCalculator.compute(frames, DEFAULT_SCENE_TAG, System.currentTimeMillis())
+            val baseline = BaselineCalculator.compute(
+                frames,
+                trainingScene.value.storageValue,
+                System.currentTimeMillis(),
+            )
             if (baseline == null) {
                 // 正常不会发生（有效帧已满 150）；万一发生要能解释，且不写残缺基线
                 _baselineOutcome.value = BaselineOutcome.InsufficientFrames(
@@ -171,6 +177,11 @@ class AppSessionViewModel(private val container: AppContainer) : ViewModel() {
         }
     }
 
+    fun setTrainingScene(scene: TrainingScene) = container.scenePreferences.setScene(scene)
+
+    fun sceneLabel(storageValue: String): String =
+        container.appContext.getString(TrainingScene.fromStorage(storageValue).labelRes)
+
     // ---- 报告（T6-01/02/03） ----
     suspend fun generateReport(): ReportEntity? {
         val sessionId = container.pomodoroStore.recentSessions(1).firstOrNull()?.sessionId ?: return null
@@ -203,7 +214,8 @@ class AppSessionViewModel(private val container: AppContainer) : ViewModel() {
             faceScale = 0.30f, pitchDeg = 8f, yawDeg = 3f, forwardDeg = 4f,
             shoulderTiltDeg = 2f, lumFace = 128f, lumBackground = 110f,
             confidence = 0.95f, sampleCount = 160,
-            createdAtWall = System.currentTimeMillis(), sceneTag = DEFAULT_SCENE_TAG,
+            createdAtWall = System.currentTimeMillis(),
+            sceneTag = trainingScene.value.storageValue,
         )
         container.baselineStore.save(baseline)
         container.visionEngine.setBaseline(baseline)
@@ -230,8 +242,6 @@ class AppSessionViewModel(private val container: AppContainer) : ViewModel() {
         const val CALIBRATION_TARGET_FPS = 30
         const val CALIBRATION_TICK_MS = 250L
 
-        /** 场景选择界面尚未提供（R2 待做），校准基线暂统一记为书桌 */
-        const val DEFAULT_SCENE_TAG = "书桌"
     }
 }
 
