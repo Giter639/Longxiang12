@@ -57,8 +57,12 @@
     <string name="p04_go_focus">去开一轮番茄</string>
 
     <!-- P07 实时状态（X18）：相机只在专注与休息阶段开启 -->
-    <string name="p07_owner">R1 接入 X18 · 状态源=MediaPipe 真引擎</string>
+    <string name="p07_owner">R1 接入 X18 · 真引擎/Mock 自动选择</string>
     <string name="p07_hint">防抖显示与断流兜底已在 StateStreamDebouncer 实现，本页只负责展示。相机只在专注与休息阶段开启，其余时间关闭。</string>
+    <string name="p07_runtime_mode">运行模式：%1$s</string>
+    <string name="p07_mode_mediapipe">MediaPipe 真引擎</string>
+    <string name="p07_mode_mock_fallback">模拟器兼容模式（Mock）</string>
+    <string name="p07_mode_mock">Mock 演示引擎</string>
     <string name="p07_live">当前状态：%1$s｜置信度 %2$.2f｜距离档位 %3$s｜困倦 %4$s</string>
     <string name="p07_interrupted">⚠ 检测中断（3 秒无有效帧）—— 界面保留最后状态：%1$s</string>
     <string name="p07_camera_idle">相机未开启：开始一轮番茄后自动开启（休息阶段保持开启，暂停时关闭）</string>

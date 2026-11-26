@@ -23,6 +23,7 @@ import com.focusdu.app.vision.CalibrationIssue
 import com.focusdu.app.vision.CalibrationState
 import com.focusdu.app.vision.PersonalBaseline
 import com.focusdu.app.vision.TrainingScene
+import com.focusdu.app.vision.VisionEngineMode
 import com.focusdu.app.vision.algo.BaselineCalculator
 import com.focusdu.app.vision.algo.CalibrationFrameFeatures
 import com.focusdu.app.vision.toCalibrationFeatures
@@ -46,6 +47,7 @@ class AppSessionViewModel(private val container: AppContainer) : ViewModel() {
     val visionUi = container.debouncer.ui
     val reminders = container.reminderEngine.decisions
     val cameraStatus = container.cameraStreamer.status
+    val visionMode: VisionEngineMode = container.visionMode
     val calibration = container.calibrationSession.state
     val restrictedPackages = container.guardSettings.restrictedPackages
     val reminderPersona = container.reminderPreferences.persona
