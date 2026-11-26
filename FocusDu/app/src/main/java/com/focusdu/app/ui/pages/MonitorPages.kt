@@ -9,6 +9,8 @@ import com.focusdu.app.databinding.FragmentPageBinding
 import com.focusdu.app.pomodoro.Phase
 import com.focusdu.app.pomodoro.PomodoroMode
 import com.focusdu.app.reminder.ReminderAction
+import com.focusdu.app.reminder.ReminderMessageResolver
+import com.focusdu.app.reminder.ReminderPersona
 import com.focusdu.app.ui.common.BasePageFragment
 import com.focusdu.app.ui.common.RingCountdownView
 import com.focusdu.app.ui.common.TrendLineChart
@@ -92,7 +94,7 @@ class P06PomodoroPage : BasePageFragment() {
                 if (list.size > reminderCountAtStart) {
                     val last = list.lastOrNull() ?: return@collect
                     if (last.action == ReminderAction.REMIND) {
-                        banner?.text = "⚠ ${last.event.type}（${last.event.level}）持续风险，请调整姿势或起身"
+                        banner?.text = vm.reminderText(last.event)
                         banner?.visibility = android.view.View.VISIBLE
                         handler.postDelayed({ banner?.visibility = android.view.View.GONE }, 4000)
                     }
@@ -168,13 +170,16 @@ class P08ReminderCenterPage : BasePageFragment() {
         addButton("延后距离提醒 60s（演示）") { vm.snooze(com.focusdu.app.reminder.RiskType.DISTANCE) }
 
         viewLifecycleOwner.lifecycleScope.launch {
-            vm.reminders.collect { list ->
+            combine(vm.reminders, vm.reminderPersona) { list, persona ->
+                list to persona
+            }.collect { (list, persona) ->
                 if (list.isEmpty()) {
                     binding.pageStatus.text = "尚无提醒决策 —— 开一轮番茄后，Mock 引擎会持续产生风险事件"
                 } else {
                     binding.pageStatus.text = list.takeLast(8).reversed().joinToString("\n") { d ->
                         when (d.action) {
-                            ReminderAction.REMIND -> "🔔 提醒 ${d.event.type}(${d.event.level}) · ${d.rule}"
+                            ReminderAction.REMIND ->
+                                "🔔 ${getString(ReminderMessageResolver.resourceId(d.event, persona))}"
                             ReminderAction.LOG_ONLY -> "📝 只记录 ${d.event.type} · ${d.rule}"
                             ReminderAction.DEFER_TO_REST -> "⏩ 延后到休息 ${d.event.type}"
                             ReminderAction.COOLDOWN_SUPPRESSED -> "❄ 冷却压制 ${d.event.type}"
