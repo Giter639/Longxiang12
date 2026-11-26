@@ -132,6 +132,8 @@
     <string name="onboarding_permissions_later">稍后设置权限</string>
 
     <!-- T1-01 固定机位引导 -->
+    <string name="p02_owner">T1-01 文案 · X21 场景与摆位 UI · X12 硬件建议</string>
+    <string name="p02_hint">按图中的距离、高度和光线摆放手机。换场景或移动支架后，请重新校准个人基线。</string>
     <string name="p02_intro">把手机放稳，校准才准</string>
     <string name="p02_scene_label">选择本次学习场景</string>
     <string name="p02_scene_desk">书桌学习</string>

@@ -18,8 +18,10 @@ import com.focusdu.app.guard.GuardPermissionState
 import com.focusdu.app.ui.common.AppSessionViewModel
 import com.focusdu.app.ui.common.BasePageFragment
 import com.focusdu.app.ui.common.BaselineOutcome
+import com.focusdu.app.ui.common.PlacementDiagramView
 import com.focusdu.app.vision.CalibrationIssue
 import com.focusdu.app.vision.CalibrationState
+import com.focusdu.app.vision.TrainingScene
 import com.google.android.material.button.MaterialButton
 import kotlinx.coroutines.launch
 
@@ -326,12 +328,105 @@ class P01GuidePage : BasePageFragment() {
 
 /** P02 固定机位引导 —— R2 示意图（T1-01，验收 3 人实测 2 人一次摆对）；R3 支架摆位图（X12） */
 class P02PositioningPage : BasePageFragment() {
-    override val ownerTag = "R2 文案 T1-01 · R3 摆位 X12"
-    override val hintText = "TODO：摆放距离/角度/支架位置示意图，场景选择（书桌/床头/自习室）。"
+    override val ownerTag: String
+        get() = getString(R.string.p02_owner)
+    override val hintText: String
+        get() = getString(R.string.p02_hint)
+
+    private val sceneButtons = mutableMapOf<TrainingScene, MaterialButton>()
 
     override fun onPageReady(view: android.view.View) {
-        addButton("下一步：坐姿校准") { navigateTo(R.id.p03CalibrationPage) }
+        binding.pageBody.addView(TextView(requireContext()).apply {
+            setText(R.string.p02_intro)
+            textSize = 22f
+            setTextColor(0xFF173B32.toInt())
+        })
+        binding.pageBody.addView(PlacementDiagramView(requireContext()).apply {
+            layoutParams = LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                dp(240),
+            ).apply { topMargin = dp(16) }
+        })
+
+        binding.pageBody.addView(TextView(requireContext()).apply {
+            setText(R.string.p02_scene_label)
+            textSize = 15f
+            setPadding(0, dp(18), 0, dp(8))
+        })
+
+        val sceneRow = LinearLayout(requireContext()).apply {
+            orientation = LinearLayout.HORIZONTAL
+        }
+        TrainingScene.entries.forEach { scene ->
+            val button = MaterialButton(requireContext()).apply {
+                text = getString(scene.labelRes)
+                isAllCaps = false
+                setOnClickListener { vm.setTrainingScene(scene) }
+            }
+            sceneButtons[scene] = button
+            sceneRow.addView(
+                button,
+                LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f).apply {
+                    marginEnd = dp(8)
+                },
+            )
+        }
+        binding.pageBody.addView(sceneRow)
+
+        binding.pageBody.addView(TextView(requireContext()).apply {
+            text = listOf(
+                R.string.p02_step_distance,
+                R.string.p02_step_height,
+                R.string.p02_step_angle,
+                R.string.p02_step_frame,
+                R.string.p02_step_light,
+                R.string.p02_step_stable,
+            ).joinToString("\n") { "• ${getString(it)}" }
+            textSize = 15f
+            setLineSpacing(0f, 1.2f)
+            setPadding(0, dp(20), 0, 0)
+        })
+
+        binding.pageBody.addView(TextView(requireContext()).apply {
+            setText(R.string.p02_common_issue_title)
+            textSize = 18f
+            setTextColor(0xFF2E7D6B.toInt())
+            setPadding(0, dp(22), 0, dp(8))
+        })
+        binding.pageBody.addView(TextView(requireContext()).apply {
+            text = listOf(
+                R.string.p02_issue_forehead,
+                R.string.p02_issue_half_face,
+                R.string.p02_issue_dark_face,
+                R.string.p02_issue_shake,
+            ).joinToString("\n") { "• ${getString(it)}" }
+            textSize = 14f
+            setLineSpacing(0f, 1.2f)
+        })
+
+        val next = addButton(getString(R.string.p02_ready)) {
+            navigateTo(R.id.p03CalibrationPage)
+        }
+        next.layoutParams = LinearLayout.LayoutParams(
+            ViewGroup.LayoutParams.MATCH_PARENT,
+            ViewGroup.LayoutParams.WRAP_CONTENT,
+        ).apply { topMargin = dp(22) }
+
+        viewLifecycleOwner.lifecycleScope.launch {
+            vm.trainingScene.collect { selected ->
+                sceneButtons.forEach { (scene, button) ->
+                    button.setBackgroundColor(
+                        if (scene == selected) 0xFFDCEEE8.toInt()
+                        else android.graphics.Color.TRANSPARENT
+                    )
+                }
+                binding.pageStatus.text = getString(selected.hintRes)
+            }
+        }
     }
+
+    private fun dp(value: Int): Int =
+        (value * resources.displayMetrics.density).toInt()
 }
 
 /** P03 校准采集（5–10s） —— R3 实现（T1-02 采集 / T1-03 质量校验，验收采集成功率 ≥95%） */
@@ -470,7 +565,12 @@ class P04BaselinePage : BasePageFragment() {
     private suspend fun statusText(): String {
         vm.currentBaseline()?.let {
             return getString(
-                R.string.p04_ready, it.faceScale, it.pitchDeg, it.yawDeg, it.sampleCount, it.sceneTag,
+                R.string.p04_ready,
+                it.faceScale,
+                it.pitchDeg,
+                it.yawDeg,
+                it.sampleCount,
+                vm.sceneLabel(it.sceneTag),
             )
         }
         val outcome = vm.baselineOutcome.value
