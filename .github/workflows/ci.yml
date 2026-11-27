@@ -25,18 +25,38 @@ jobs:
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v4
 
+      # 统一签名口径：发版/给队友的包一律 release 签名（CN=FocusDu Longxiang）。
+      # 签名材料走 Actions secrets（公开仓库不带 keystore）；本机在 FocusDu/keystore/（不入库）。
+      # secrets 缺失时跳过还原，assembleRelease 产出未签名包，不影响测试。
+      - name: Restore release signing from secrets
+        env:
+          ANDROID_KEYSTORE_B64: ${{ secrets.ANDROID_KEYSTORE_B64 }}
+          ANDROID_KS_STORE_PASS: ${{ secrets.ANDROID_KS_STORE_PASS }}
+          ANDROID_KS_KEY_ALIAS: ${{ secrets.ANDROID_KS_KEY_ALIAS }}
+          ANDROID_KS_KEY_PASS: ${{ secrets.ANDROID_KS_KEY_PASS }}
+        if: ${{ env.ANDROID_KEYSTORE_B64 != '' }}
+        run: |
+          mkdir -p FocusDu/keystore
+          echo "$ANDROID_KEYSTORE_B64" | base64 -d > FocusDu/keystore/focusdu-release.jks
+          printf 'storeFile=focusdu-release.jks\nstorePassword=%s\nkeyAlias=%s\nkeyPassword=%s\n' \
+            "$ANDROID_KS_STORE_PASS" "$ANDROID_KS_KEY_ALIAS" "$ANDROID_KS_KEY_PASS" \
+            > FocusDu/keystore/keystore.properties
+
       - name: Build + Unit Tests (41 acceptance anchors)
         run: |
           chmod +x FocusDu/gradlew
           cd FocusDu
-          ./gradlew :app:assembleDebug :app:testDebugUnitTest --no-daemon
+          ./gradlew :app:assembleDebug :app:assembleRelease :app:testDebugUnitTest --no-daemon
 
       # 打包产物：单测全过才上传，任何人都能在 Actions 页面下载真机测试
-      - name: Upload debug APK
+      # 发队友一律用 app-release.apk（release 签名可覆盖安装）；app-debug.apk 仅供本机调试比对
+      - name: Upload APKs
         uses: actions/upload-artifact@v4
         with:
           name: FocusDu-APK-${{ github.run_number }}
-          path: FocusDu/app/build/outputs/apk/debug/app-debug.apk
+          path: |
+            FocusDu/app/build/outputs/apk/debug/app-debug.apk
+            FocusDu/app/build/outputs/apk/release/app-release.apk
           if-no-files-found: error
           retention-days: 30
 
