@@ -82,6 +82,8 @@ wb.save("任务卡.xlsx")
 
 ### 环境注意事项
 
+- **签名口径（X06 补充，2026-11-28）**：发版/给队友的 APK 一律 **release 签名**（CN=FocusDu Longxiang）；debug 密钥每台机器不同，debug 包覆盖别人安装会报「签名不一致」。CI 从 Actions secrets（`ANDROID_KEYSTORE_B64` 等 4 个）取签名材料，本机材料在 `FocusDu/keystore/`（不入库）；**debug 包只本机调试用，勿发队友**。
+
 - **仓库必须克隆到纯英文路径**：中文路径下单元测试会因 AGP 已知 bug 报 ClassNotFoundException（APK 打包不受影响）；
 - `FocusDu/local.properties` 每台机器自己配 `sdk.dir`（已 gitignore）；
 - 双击根目录 `启动器.bat` 一键构建、拉起 `PixelTest`/真机、安装最新 APK 并打开 App；它是 ASCII 批处理入口，实际逻辑在 `FocusDu/tools/launch_focusdu.ps1`；
