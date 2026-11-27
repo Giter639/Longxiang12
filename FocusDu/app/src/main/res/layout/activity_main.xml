@@ -5,12 +5,13 @@
     android:layout_height="match_parent"
     android:orientation="vertical">
 
+    <!-- UI 改版：浅色工具栏与页面同底色，标题用墨色（去大面积色块，清新干练） -->
     <com.google.android.material.appbar.MaterialToolbar
         android:id="@+id/toolbar"
         android:layout_width="match_parent"
         android:layout_height="?attr/actionBarSize"
-        android:background="@color/focusdu_primary"
-        app:titleTextColor="@color/focusdu_on_primary" />
+        android:background="@color/focusdu_surface"
+        app:titleTextColor="@color/focusdu_ink" />
 
     <androidx.fragment.app.FragmentContainerView
         android:id="@+id/nav_host"

@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- UI 改版间距栅格：8dp 基准 -->
+    <dimen name="page_padding">20dp</dimen>
+    <dimen name="space_sm">8dp</dimen>
+    <dimen name="space_md">12dp</dimen>
+    <dimen name="space_lg">20dp</dimen>
+    <dimen name="card_radius">16dp</dimen>
+    <dimen name="card_padding">16dp</dimen>
+    <dimen name="button_radius">14dp</dimen>
+</resources>
