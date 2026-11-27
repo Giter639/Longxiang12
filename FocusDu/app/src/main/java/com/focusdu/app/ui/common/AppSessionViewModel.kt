@@ -45,6 +45,7 @@ class AppSessionViewModel(private val container: AppContainer) : ViewModel() {
 
     val pomodoro = container.pomodoroEngine.state
     val visionUi = container.debouncer.ui
+    val imuUi = container.imuDebouncer.ui   // X22 IMU 状态流（P07 IMU 小窗/调试用，UI 接入在 X23/X24）
     val reminders = container.reminderEngine.decisions
     val cameraStatus = container.cameraStreamer.status
     val visionMode: VisionEngineMode = container.visionMode

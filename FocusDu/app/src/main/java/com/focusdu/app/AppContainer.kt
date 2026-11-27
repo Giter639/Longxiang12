@@ -11,6 +11,9 @@ import com.focusdu.app.guard.GuardPermissions
 import com.focusdu.app.guard.GuardSettings
 import com.focusdu.app.guard.LaunchableAppRepository
 import com.focusdu.app.guard.NotificationMemoryStore
+import com.focusdu.app.imu.ImuEngine
+import com.focusdu.app.imu.ImuVisionBridge
+import com.focusdu.app.imu.MockImuEngine
 import com.focusdu.app.perf.DevicePerformanceMonitor
 import com.focusdu.app.pomodoro.PomodoroEngine
 import com.focusdu.app.pomodoro.PomodoroStore
@@ -107,6 +110,11 @@ class AppContainer(context: Context) {
     val visionMode: VisionEngineMode = visionBinding.mode
     val sessionCamera = SessionCameraGate(cameraStreamer, appScope)
     val debouncer = StateStreamDebouncer(appScope, clock)
+    // X22 IMU 接入点（R4 协议 / R3 设备）：当前 Mock 驱动，X23 的 BLE 真实现在此换绑定。
+    // 独立 debouncer：埋点与提醒是否吃 IMU 流由 X24 状态机 + X26 融合仲裁统一接线，
+    // 避免视觉与 IMU 双源同时写 STATE_SPAN/提醒 造成双计（架构红线：没有第二条数据通路）。
+    val imuEngine: ImuEngine = MockImuEngine(clock, appScope)
+    val imuDebouncer = StateStreamDebouncer(appScope, clock)
     val baselineStore = BaselineStore(db)
     val reportGenerator = ReportGenerator(db, tracker, clock, cleaner)
 
@@ -132,6 +140,11 @@ class AppContainer(context: Context) {
         }
         appScope.launch { visionEngine.samples().collect { debouncer.onSample(it) } }
         appScope.launch { visionEngine.samples().collect { sampleRecorder.onSample(it) } }   // 采样落盘
+        // X22：IMU 样本 → 六态映射桥 → 独立防抖通道（X24/X26 决定是否并入主链）
+        appScope.launch {
+            imuEngine.samples().map { ImuVisionBridge.toVisionSample(it) }
+                .collect { imuDebouncer.onSample(it) }
+        }
         appScope.launch { visionEngine.samples().collect { calibrationSession.onVisionSample(it) } }
         appScope.launch { cameraStreamer.frames().collect { calibrationSession.onFrame(it) } }
         spanLogger.start(appScope)
