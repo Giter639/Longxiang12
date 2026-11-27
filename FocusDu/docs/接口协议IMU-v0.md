@@ -93,3 +93,23 @@
 - 特征滑窗 500ms（约 12 样本）；判定输出频率与样本流一致，滞回防跳变；
 - 全部计算在端侧，禁止联网；
 - 任何协议改动：固件 `.ino` + 本文档 + `ImuModels.kt` 三处同 PR 同步。
+
+## 8. X24 规则状态机默认参数（v0 口径，真机联调可调，改默认值须 R4 同步单测锚点）
+
+代码落点：`imu/ImuStateClassifier`（X24 判定层，X23 的 BleImuEngine 内部组合；Mock 引擎不经过它）。
+
+| 参数 | 默认值 | 语义 |
+| --- | --- | --- |
+| gravityAlpha | 0.05 | 重力低通系数 @25Hz（τ≈0.8s），姿态阶跃渐进收敛 |
+| motionWindowSamples | 12 | motionRms 滑窗（≈480ms），静止≈0.02、乱动>0.25、走动>0.35 |
+| headDownEnterDeg / ExitDeg | 25 / 15 | 低头进入/退出角（基线偏移口径） |
+| leanEnterDeg / ExitDeg | 30 / 20 | 侧趴进入/退出角 |
+| postureHoldMs | 3000 | 低头/侧趴进入保持窗 |
+| fidgetEnterRms / ExitRms / HoldMs | 0.25 / 0.15 / 2000 | 乱动 |
+| awayEnterRms / ExitRms / HoldMs | 0.35 / 0.10 / 5000 | 离座（走动级能量，短促起坐不误报） |
+| confStable / confTransition | 0.90 / 0.60 | 稳定期/转换期置信度（均 ≥0.5，不被客户端丢弃） |
+
+- 五态优先级：**AWAY > HEAD_DOWN > LEAN > FIDGET > NORMAL**（同时满足取更高风险）；
+- 进入用进入阈值 + 保持窗；退出用退出阈值（滑窗平滑 + 滞回，1s 内不反复跳变）；
+- 判定全部基于 `ImuBaseline` 偏移（无基线视为 0）；
+- 坐标约定：设备竖直佩戴，pitch=atan2(ax,az)、roll=atan2(ay,az)，正=低头/右倾；真机方向反了只调符号，不破协议。
