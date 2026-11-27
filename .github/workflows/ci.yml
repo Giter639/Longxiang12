@@ -1,6 +1,7 @@
 name: CI
 
 # 触发：所有 PR + main 分支的 push（合并后兜底验证）+ 手动运行
+# 每次运行通过单测后自动产出 debug APK 产物（Actions 页面 → 本次运行 → Artifacts 下载），无需手动打包
 on:
   workflow_dispatch:
   pull_request:
@@ -29,6 +30,15 @@ jobs:
           chmod +x FocusDu/gradlew
           cd FocusDu
           ./gradlew :app:assembleDebug :app:testDebugUnitTest --no-daemon
+
+      # 打包产物：单测全过才上传，任何人都能在 Actions 页面下载真机测试
+      - name: Upload debug APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: FocusDu-APK-${{ github.run_number }}
+          path: FocusDu/app/build/outputs/apk/debug/app-debug.apk
+          if-no-files-found: error
+          retention-days: 30
 
       - name: Upload test reports (on failure)
         if: failure()

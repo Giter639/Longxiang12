@@ -15,8 +15,8 @@ android {
         minSdk = 26
         targetSdk = 35
         // 版本号规则见 docs/协作规范.md：1.0.D<天数>，每天发版 +1
-        versionCode = 6
-        versionName = "1.0.D6"
+        versionCode = 7
+        versionName = "1.0.D7"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
