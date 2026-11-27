@@ -120,6 +120,7 @@ wb.save("任务卡.xlsx")
 | `FocusDu/README.md` | 架构图、任务对照表、状态总览（人类看的入口） |
 | `FocusDu/docs/协作规范.md` | 分支模型、PR/Review 清单、发版节奏 |
 | `FocusDu/docs/接口协议v0.md` | 算法↔客户端协议（R4 对接依据） |
+| `FocusDu/docs/接口协议IMU-v0.md` | IMU↔客户端协议（X22/X25 定稿，X23 对接依据；BLE 帧表以固件 README 为准） |
 | `FocusDu/docs/页面清单.md` | P01–P14 页面状态镜像 |
 | `FocusDu/docs/指标口径表.md` | 指标口径 DRAFT_v0.1（4 个待确认点，D5 定稿） |
 | `FocusDu/docs/R3机型适配与验证.md` | 机型参数与采集验证记录 |
