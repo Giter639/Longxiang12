@@ -38,7 +38,7 @@ jobs:
         run: |
           mkdir -p FocusDu/keystore
           echo "$ANDROID_KEYSTORE_B64" | base64 -d > FocusDu/keystore/focusdu-release.jks
-          printf 'storeFile=focusdu-release.jks\nstorePassword=%s\nkeyAlias=%s\nkeyPassword=%s\n' \
+          printf 'storeFile=keystore/focusdu-release.jks\nstorePassword=%s\nkeyAlias=%s\nkeyPassword=%s\n' \
             "$ANDROID_KS_STORE_PASS" "$ANDROID_KS_KEY_ALIAS" "$ANDROID_KS_KEY_PASS" \
             > FocusDu/keystore/keystore.properties
 
