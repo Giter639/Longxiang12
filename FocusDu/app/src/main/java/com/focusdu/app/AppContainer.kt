@@ -12,8 +12,12 @@ import com.focusdu.app.guard.GuardSettings
 import com.focusdu.app.guard.LaunchableAppRepository
 import com.focusdu.app.guard.NotificationMemoryStore
 import com.focusdu.app.imu.ImuEngine
+import com.focusdu.app.imu.ImuEngineFactory
+import com.focusdu.app.imu.ImuEngineMode
 import com.focusdu.app.imu.ImuVisionBridge
 import com.focusdu.app.imu.MockImuEngine
+import com.focusdu.app.imu.VisionImuArbiter
+import com.focusdu.app.imu.ble.BleImuEngine
 import com.focusdu.app.perf.DevicePerformanceMonitor
 import com.focusdu.app.pomodoro.PomodoroEngine
 import com.focusdu.app.pomodoro.PomodoroStore
@@ -110,11 +114,21 @@ class AppContainer(context: Context) {
     val visionMode: VisionEngineMode = visionBinding.mode
     val sessionCamera = SessionCameraGate(cameraStreamer, appScope)
     val debouncer = StateStreamDebouncer(appScope, clock)
-    // X22 IMU 接入点（R4 协议 / R3 设备）：当前 Mock 驱动，X23 的 BLE 真实现在此换绑定。
-    // 独立 debouncer：埋点与提醒是否吃 IMU 流由 X24 状态机 + X26 融合仲裁统一接线，
+    // X23 IMU 接入点（R4 协议 / R3 设备）：BLE 真引擎优先（BleImuEngine 内部组合 X24 判定层），
+    // 本机无蓝牙/初始化失败自动回退 Mock，模式由 imuMode 透出（P15 标注，不伪装真数据）。
+    // 独立 debouncer：埋点与提醒是否吃 IMU 流由 X26 融合仲裁统一接线，
     // 避免视觉与 IMU 双源同时写 STATE_SPAN/提醒 造成双计（架构红线：没有第二条数据通路）。
-    val imuEngine: ImuEngine = MockImuEngine(clock, appScope)
+    private val imuBinding = ImuEngineFactory.bind(
+        bleFactory = { BleImuEngine(appContext, clock, appScope) },
+        mockFactory = { MockImuEngine(clock, appScope) },
+        onFallback = { error -> Log.e(IMU_TAG, "BLE unavailable; using Mock fallback", error) },
+    )
+    val imuEngine: ImuEngine = imuBinding.engine
+    val imuMode: ImuEngineMode = imuBinding.mode
     val imuDebouncer = StateStreamDebouncer(appScope, clock)
+    // X26 融合仲裁（主备切换）：视觉为主源、断流/遮挡时 IMU 兜底，规则见 VisionImuArbiter；
+    // 仲裁后单一状态流喂既有 debouncer 管线，埋点/提醒无双计（下游零改动）
+    val stateArbiter = VisionImuArbiter(clock)
     val baselineStore = BaselineStore(db)
     val reportGenerator = ReportGenerator(db, tracker, clock, cleaner)
 
@@ -138,9 +152,12 @@ class AppContainer(context: Context) {
             pomodoroEngine.state.map { it.phase }.distinctUntilChanged()
                 .collect { sessionCamera.setSessionWanted(SessionCameraGate.sessionNeedsCamera(it)) }
         }
-        appScope.launch { visionEngine.samples().collect { debouncer.onSample(it) } }
-        appScope.launch { visionEngine.samples().collect { sampleRecorder.onSample(it) } }   // 采样落盘
-        // X22：IMU 样本 → 六态映射桥 → 独立防抖通道（X24/X26 决定是否并入主链）
+        // X26：双源进仲裁器，仲裁后的单一状态流驱动主防抖 → 埋点/提醒/休息校验照常工作
+        appScope.launch { visionEngine.samples().collect { stateArbiter.onVisionSample(it) } }
+        appScope.launch { visionEngine.samples().collect { sampleRecorder.onSample(it) } }   // 采样落盘（只记真实视觉样本）
+        appScope.launch { imuEngine.samples().collect { stateArbiter.onImuSample(it) } }
+        appScope.launch { stateArbiter.arbitrated.collect { debouncer.onSample(it) } }
+        // X22：IMU 样本 → 六态映射桥 → 独立观测通道（imuUi 调试/后续 P07 IMU 小窗，不进埋点）
         appScope.launch {
             imuEngine.samples().map { ImuVisionBridge.toVisionSample(it) }
                 .collect { imuDebouncer.onSample(it) }
@@ -165,5 +182,6 @@ class AppContainer(context: Context) {
 
     private companion object {
         const val VISION_TAG = "FocusDuVision"
+        const val IMU_TAG = "FocusDuImu"
     }
 }

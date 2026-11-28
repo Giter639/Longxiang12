@@ -56,6 +56,7 @@ wb.save("任务卡.xlsx")
 
 **R3（采集/设备）**：
 - ✅ 已完成：`vision/CameraStreamer.kt` 内的 `CameraXStreamer`（8fps 取流，已绑定 AppContainer）、`vision/CalibrationSession.kt`（T1-02 校准采集 + T1-03 质量校验，P03 页已接）；
+- ✅ 已完成（X23）：`imu/ble/BleImuEngine` BLE 取流（扫描/GATT/断连重连，内部组合 X24 判定层）+ `ImuFrameParser` 帧解析 + P15 设备绑定页，已绑定 AppContainer（无蓝牙自动回退 Mock）；真机验收需烧录 X25 固件（firmware README）；
 - ✅ 代码已接入：P10 权限、前台应用检测、悬浮窗软拦截和紧急放行（`guard/`）；真机延迟和紧急功能仍需按任务卡验证；
 - 🔲 待真机：X12/X14 性能、兼容与现场验收；
 - 机型参数表在 `FocusDu/docs/R3机型适配与验证.md`。
@@ -67,6 +68,8 @@ wb.save("任务卡.xlsx")
 - **MediaPipeVisionEngine 已是默认绑定**；`AppContainer` 保留一行切换 Mock 的注释入口；
 - 真机联调时：验证 `setBaseline` 注入、真机标定 `FaceFeatureMapper` 的 PITCH/YAW/FORWARD 符号常量，并补齐精度报告；
 - ⚠️ 肩线检测降级：FaceLandmarker 无肩部关键点，`shoulderTiltDeg` 恒 0，T2-02 肩线子项待 MediaPipe Pose 增强；
+- ✅ 已完成（X24/X26）：`imu/ImuStateClassifier`（IMU 规则状态机，五态判定）+ `imu/VisionImuArbiter`（视觉×IMU 主备切换仲裁）——
+  双源经仲裁输出单一状态流喂 StateStreamDebouncer，埋点/提醒无双计；视觉断流/遮挡时 IMU 兜底（规则与参数见 docs/接口协议IMU-v0.md 第 6/8 节）；
 - 算法事件源（PostureDetector.activeEvent / SittingMonitor.sedentaryEvent）就绪后，用事件流替换 `reminder/RiskEventWire.kt`（当前是骨架演示接线）。
 
 **R2（需求/质量）**：
