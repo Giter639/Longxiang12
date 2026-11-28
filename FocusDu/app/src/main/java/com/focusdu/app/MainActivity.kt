@@ -1,6 +1,7 @@
 package com.focusdu.app
 
 import android.os.Bundle
+import androidx.activity.OnBackPressedCallback
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
 import androidx.navigation.fragment.NavHostFragment
@@ -14,6 +15,9 @@ import kotlinx.coroutines.launch
  * 附加职责：番茄相位变化时的自动引导（T3-04）——
  *   专注→休息：自动带到 P09 休息页；休息→结束：自动带到 P12 看报告。
  * 仅在相位实际变化时导航一次，用户手动导航不被打断。
+ *
+ * 返回键语义（产品口径）：P05 首页之外的任何页面按返回 = 回首页（弹回栈到 P05，
+ * 不在栈中则兜底直接导航）；已在首页时不再拦截，交给系统默认行为（退出应用）。
  */
 class MainActivity : AppCompatActivity() {
 
@@ -24,7 +28,21 @@ class MainActivity : AppCompatActivity() {
         setContentView(R.layout.activity_main)
 
         val navHost = supportFragmentManager.findFragmentById(R.id.nav_host) as NavHostFragment
-        findViewById<MaterialToolbar>(R.id.toolbar).setupWithNavController(navHost.navController)
+        val nav = navHost.navController
+        findViewById<MaterialToolbar>(R.id.toolbar).setupWithNavController(nav)
+
+        // 非首页时接管返回键：弹回栈到首页；首页自身不拦截（可正常退出）
+        val backToHome = object : OnBackPressedCallback(false) {
+            override fun handleOnBackPressed() {
+                if (!nav.popBackStack(R.id.p05HomePage, false)) {
+                    nav.navigate(R.id.p05HomePage)
+                }
+            }
+        }
+        onBackPressedDispatcher.addCallback(this, backToHome)
+        nav.addOnDestinationChangedListener { _, destination, _ ->
+            backToHome.isEnabled = destination.id != R.id.p05HomePage
+        }
 
         // 番茄期间的相机绑定到本页面的生命周期（退到后台自动停流，回前台自动恢复）
         val container = (application as FocusDuApp).container
@@ -36,7 +54,6 @@ class MainActivity : AppCompatActivity() {
                 lastPhase = s.phase
                 if (prev == null || prev == s.phase) return@collect
 
-                val nav = navHost.navController
                 when {
                     s.phase == Phase.BREAK && prev == Phase.FOCUS ->
                         nav.navigate(R.id.p09RestPage)
