@@ -461,6 +461,7 @@ class P03CalibrationPage : BasePageFragment() {
         val previewCard = addCard()
         previewCard.addView(previewView)
         previewCard.clipToOutline = true
+        binding.pageBody.removeView(previewCard)     // addCard 默认挂到末尾，预览卡要置顶：先摘再插回首位
         binding.pageBody.addView(previewCard, 0)
 
         addButton(getString(R.string.p03_start)) {
