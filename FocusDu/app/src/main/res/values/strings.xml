@@ -261,4 +261,22 @@
     <string name="p06_mode_health">健康优先</string>
     <string name="p06_pause">暂停</string>
     <string name="p06_give_up">放弃本轮 / 跳过休息</string>
+    <!-- ============================================================
+         X29 UI 第二轮精修新增文案
+         ============================================================ -->
+    <string name="p02_scene_label_steps">摆放步骤</string>
+    <string name="p10_apps_section">限制应用清单</string>
+    <string name="p11_section_persona">提醒人格</string>
+    <string name="p13_chart_title">近 7 轮趋势</string>
+    <string name="p07_imu_section">IMU 通道</string>
+    <string name="p07_imu_conn_fmt">连接：%1$s</string>
+    <string name="p07_imu_mode_fmt">引擎：%1$s</string>
+    <string name="p07_imu_conn_connected">已连接 %1$s</string>
+    <string name="p07_imu_conn_reconnecting">自动重连中</string>
+    <string name="p07_imu_conn_pending">连接/扫描中</string>
+    <string name="p07_imu_conn_permission">待授权蓝牙权限</string>
+    <string name="p07_imu_conn_off">未连接</string>
+    <string name="p07_imu_state_fmt">判定：%1$s</string>
+    <string name="p07_imu_state_idle">等待样本</string>
+    <string name="p07_imu_state_interrupted">检测中断</string>
 </resources>

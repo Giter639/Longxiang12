@@ -72,7 +72,7 @@ class P01GuidePage : BasePageFragment() {
         }
         screenTitle = TextView(requireContext()).apply {
             textSize = 24f
-            setTextColor(0xFF173B32.toInt())
+            setTextColor(ContextCompat.getColor(requireContext(), R.color.focusdu_ink))
             setPadding(0, dp(12), 0, dp(8))
         }
         screenBody = TextView(requireContext()).apply {
@@ -81,7 +81,7 @@ class P01GuidePage : BasePageFragment() {
         }
         screenNote = TextView(requireContext()).apply {
             textSize = 13f
-            setTextColor(0xFF63736D.toInt())
+            setTextColor(ContextCompat.getColor(requireContext(), R.color.focusdu_ink_secondary))
             setPadding(0, dp(12), 0, 0)
         }
         privacyContainer = LinearLayout(requireContext()).apply {
@@ -117,6 +117,9 @@ class P01GuidePage : BasePageFragment() {
             } else {
                 navigateTo(R.id.p02PositioningPage)
             }
+        }.apply {
+            backgroundTintList = ContextCompat.getColorStateList(requireContext(), R.color.focusdu_primary)
+            setTextColor(ContextCompat.getColor(requireContext(), R.color.focusdu_on_primary))
         }
         navigation.addView(previousButton, weightedButtonParams())
         navigation.addView(nextButton, weightedButtonParams(start = dp(12)))
@@ -228,7 +231,7 @@ class P01GuidePage : BasePageFragment() {
                 textSize = 16f
                 setPadding(0, dp(12), 0, dp(8))
                 isClickable = true
-                setTextColor(0xFF2E7D6B.toInt())
+                setTextColor(ContextCompat.getColor(requireContext(), R.color.focusdu_primary))
                 setOnClickListener {
                     if (!expandedPrivacy.add(index)) expandedPrivacy.remove(index)
                     details[index].visibility =
@@ -240,7 +243,7 @@ class P01GuidePage : BasePageFragment() {
                 text = getString(detailRes)
                 textSize = 14f
                 setLineSpacing(0f, 1.2f)
-                setTextColor(0xFF4C5A55.toInt())
+                setTextColor(ContextCompat.getColor(requireContext(), R.color.focusdu_ink_secondary))
                 visibility =
                     if (index in expandedPrivacy) android.view.View.VISIBLE
                     else android.view.View.GONE
@@ -297,6 +300,9 @@ class P01GuidePage : BasePageFragment() {
         MaterialButton(requireContext()).apply {
             text = label
             isAllCaps = false
+            cornerRadius = resources.getDimensionPixelSize(R.dimen.button_radius)
+            backgroundTintList = ContextCompat.getColorStateList(requireContext(), R.color.focusdu_primary_tint)
+            setTextColor(ContextCompat.getColor(requireContext(), R.color.focusdu_primary_dark))
             setOnClickListener { onClick() }
             layoutParams = LinearLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT,
@@ -339,7 +345,7 @@ class P02PositioningPage : BasePageFragment() {
         binding.pageBody.addView(TextView(requireContext()).apply {
             setText(R.string.p02_intro)
             textSize = 22f
-            setTextColor(0xFF173B32.toInt())
+            setTextColor(ContextCompat.getColor(requireContext(), R.color.focusdu_ink))
         })
         binding.pageBody.addView(PlacementDiagramView(requireContext()).apply {
             layoutParams = LinearLayout.LayoutParams(
@@ -348,11 +354,7 @@ class P02PositioningPage : BasePageFragment() {
             ).apply { topMargin = dp(16) }
         })
 
-        binding.pageBody.addView(TextView(requireContext()).apply {
-            setText(R.string.p02_scene_label)
-            textSize = 15f
-            setPadding(0, dp(18), 0, dp(8))
-        })
+        addSectionLabel(getString(R.string.p02_scene_label))
 
         val sceneRow = LinearLayout(requireContext()).apply {
             orientation = LinearLayout.HORIZONTAL
@@ -361,6 +363,9 @@ class P02PositioningPage : BasePageFragment() {
             val button = MaterialButton(requireContext()).apply {
                 text = getString(scene.labelRes)
                 isAllCaps = false
+                cornerRadius = resources.getDimensionPixelSize(R.dimen.button_radius)
+                backgroundTintList = ContextCompat.getColorStateList(requireContext(), R.color.focusdu_primary_tint)
+                setTextColor(ContextCompat.getColor(requireContext(), R.color.focusdu_primary_dark))
                 setOnClickListener { vm.setTrainingScene(scene) }
             }
             sceneButtons[scene] = button
@@ -373,7 +378,9 @@ class P02PositioningPage : BasePageFragment() {
         }
         binding.pageBody.addView(sceneRow)
 
-        binding.pageBody.addView(TextView(requireContext()).apply {
+        addSectionLabel(getString(R.string.p02_scene_label_steps))
+        val stepsCard = addCard()
+        stepsCard.addView(TextView(requireContext()).apply {
             text = listOf(
                 R.string.p02_step_distance,
                 R.string.p02_step_height,
@@ -384,16 +391,11 @@ class P02PositioningPage : BasePageFragment() {
             ).joinToString("\n") { "• ${getString(it)}" }
             textSize = 15f
             setLineSpacing(0f, 1.2f)
-            setPadding(0, dp(20), 0, 0)
+            setTextColor(ContextCompat.getColor(requireContext(), R.color.focusdu_ink_secondary))
         })
 
-        binding.pageBody.addView(TextView(requireContext()).apply {
-            setText(R.string.p02_common_issue_title)
-            textSize = 18f
-            setTextColor(0xFF2E7D6B.toInt())
-            setPadding(0, dp(22), 0, dp(8))
-        })
-        binding.pageBody.addView(TextView(requireContext()).apply {
+        val issueCard = addCard(getString(R.string.p02_common_issue_title))
+        issueCard.addView(TextView(requireContext()).apply {
             text = listOf(
                 R.string.p02_issue_forehead,
                 R.string.p02_issue_half_face,
@@ -402,23 +404,23 @@ class P02PositioningPage : BasePageFragment() {
             ).joinToString("\n") { "• ${getString(it)}" }
             textSize = 14f
             setLineSpacing(0f, 1.2f)
+            setTextColor(ContextCompat.getColor(requireContext(), R.color.focusdu_ink_secondary))
         })
 
-        val next = addButton(getString(R.string.p02_ready)) {
+        addPrimaryButton(getString(R.string.p02_ready)) {
             navigateTo(R.id.p03CalibrationPage)
         }
-        next.layoutParams = LinearLayout.LayoutParams(
-            ViewGroup.LayoutParams.MATCH_PARENT,
-            ViewGroup.LayoutParams.WRAP_CONTENT,
-        ).apply { topMargin = dp(22) }
 
         viewLifecycleOwner.lifecycleScope.launch {
             vm.trainingScene.collect { selected ->
                 sceneButtons.forEach { (scene, button) ->
-                    button.setBackgroundColor(
-                        if (scene == selected) 0xFFDCEEE8.toInt()
-                        else android.graphics.Color.TRANSPARENT
-                    )
+                    if (scene == selected) {
+                        button.backgroundTintList = ContextCompat.getColorStateList(requireContext(), R.color.focusdu_primary)
+                        button.setTextColor(ContextCompat.getColor(requireContext(), R.color.focusdu_on_primary))
+                    } else {
+                        button.backgroundTintList = ContextCompat.getColorStateList(requireContext(), R.color.focusdu_primary_tint)
+                        button.setTextColor(ContextCompat.getColor(requireContext(), R.color.focusdu_primary_dark))
+                    }
                 }
                 binding.pageStatus.text = getString(selected.hintRes)
             }
@@ -456,7 +458,10 @@ class P03CalibrationPage : BasePageFragment() {
                 dp(360),
             )
         }
-        binding.pageBody.addView(previewView, 0)
+        val previewCard = addCard()
+        previewCard.addView(previewView)
+        previewCard.clipToOutline = true
+        binding.pageBody.addView(previewCard, 0)
 
         addButton(getString(R.string.p03_start)) {
             if (hasCameraPermission()) {

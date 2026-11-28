@@ -81,11 +81,12 @@ class P13HistoryTrendPage : BasePageFragment() {
     override val hintText = "绿线=有效学习时长（分），橙线=高风险占比（%）。数据来自本地报告历史；样本不足 2 轮时显示提示。"
 
     override fun onPageReady(view: android.view.View) {
+        val chartCard = addCard(getString(R.string.p13_chart_title))
         val chart = TrendLineChart(requireContext())
         chart.layoutParams = android.widget.LinearLayout.LayoutParams(
             android.widget.LinearLayout.LayoutParams.MATCH_PARENT, 620
         )
-        binding.pageBody.addView(chart, 0)
+        chartCard.addView(chart)
 
         fun refresh() {
             viewLifecycleOwner.lifecycleScope.launch {
