@@ -1,8 +1,8 @@
 package com.focusdu.app.ui.pages
 
-import android.graphics.Color
 import android.view.Gravity
 import android.widget.TextView
+import androidx.core.content.ContextCompat
 import androidx.lifecycle.lifecycleScope
 import com.focusdu.app.R
 import com.focusdu.app.databinding.FragmentPageBinding
@@ -35,13 +35,7 @@ class P06PomodoroPage : BasePageFragment() {
     private val handler = Handler(Looper.getMainLooper())
 
     override fun onPageReady(view: android.view.View) {
-        addButton("开始 · 标准 25/5") { vm.startPomodoro(PomodoroMode.STANDARD) }
-        addButton("开始 · 深度 50/10") { vm.startPomodoro(PomodoroMode.DEEP) }
-        addButton("开始 · 健康优先 25/5") { vm.startPomodoro(PomodoroMode.HEALTH_FIRST) }
-        pauseResumeBtn = addButton("暂停") { togglePause() }
-        addButton("放弃本轮 / 跳过休息") { vm.giveUp() }
-
-        // 环形倒计时
+        // 环形倒计时（大数字主视觉）
         ring = RingCountdownView(requireContext()).apply {
             layoutParams = android.widget.LinearLayout.LayoutParams(
                 android.widget.LinearLayout.LayoutParams.MATCH_PARENT, 640
@@ -49,11 +43,19 @@ class P06PomodoroPage : BasePageFragment() {
         }
         binding.pageBody.addView(ring, 0)
 
-        // 提醒边缘横幅（REMIND 决策到达时显示 4 秒）
+        // 三种模式并排选择（次级样式，等宽）
+        val modeRow = addButtonRow()
+        addRowButton(modeRow, getString(R.string.p06_mode_standard)) { vm.startPomodoro(PomodoroMode.STANDARD) }
+        addRowButton(modeRow, getString(R.string.p06_mode_deep)) { vm.startPomodoro(PomodoroMode.DEEP) }
+        addRowButton(modeRow, getString(R.string.p06_mode_health)) { vm.startPomodoro(PomodoroMode.HEALTH_FIRST) }
+        pauseResumeBtn = addButton(getString(R.string.p06_pause)) { togglePause() }
+        addButton(getString(R.string.p06_give_up)) { vm.giveUp() }
+
+        // 提醒边缘横幅（REMIND 决策到达时显示 4 秒；语义色走资源）
         banner = TextView(requireContext()).apply {
             setPadding(24, 20, 24, 20)
-            setBackgroundColor(Color.parseColor("#FDEBD0"))
-            setTextColor(Color.parseColor("#8C4A0F"))
+            setBackgroundResource(R.drawable.bg_banner_warning)
+            setTextColor(ContextCompat.getColor(requireContext(), R.color.focusdu_warning))
             textSize = 14f
             gravity = Gravity.CENTER
             visibility = android.view.View.GONE

@@ -1,7 +1,8 @@
 package com.focusdu.app.ui.pages
 
-import android.graphics.Color
+import android.widget.LinearLayout
 import android.widget.TextView
+import androidx.core.content.ContextCompat
 import androidx.lifecycle.lifecycleScope
 import com.focusdu.app.R
 import com.focusdu.app.databinding.FragmentPageBinding
@@ -36,7 +37,7 @@ class P12RoundReportPage : BasePageFragment() {
         }
     }
 
-    /** 动态渲染区块卡片（重复渲染前先清掉旧的，保留按钮） */
+    /** 动态渲染区块卡片（重复渲染前先清掉旧的，保留按钮）；UI 改版：白卡+粗体标题+灰字条目 */
     private fun renderSections(sections: List<com.focusdu.app.report.ReportGenerator.ReportSection>) {
         val ctx = requireContext()
         for (i in (binding.pageBody.childCount - 1) downTo 0) {
@@ -45,21 +46,30 @@ class P12RoundReportPage : BasePageFragment() {
             }
         }
         sections.forEach { sec ->
-            val card = TextView(ctx).apply {
+            val card = LinearLayout(ctx).apply {
                 tag = "section_card"
-                text = buildString {
-                    append(sec.title).append('\n')
-                    sec.lines.forEach { append("· ").append(it).append('\n') }
-                }
-                setPadding(28, 22, 28, 26)
-                setBackgroundColor(Color.parseColor("#EAF1EE"))
-                setTextColor(Color.parseColor("#33413C"))
-                textSize = 13.5f
+                orientation = android.widget.LinearLayout.VERTICAL
+                setBackgroundResource(R.drawable.bg_status_card)
+                setPadding(44, 34, 44, 40)   // px：≈16dp 卡内边距（2x 密度）
                 layoutParams = android.widget.LinearLayout.LayoutParams(
                     android.widget.LinearLayout.LayoutParams.MATCH_PARENT,
                     android.widget.LinearLayout.LayoutParams.WRAP_CONTENT,
                 ).apply { topMargin = 32 }
             }
+            val title = TextView(ctx).apply {
+                text = sec.title
+                textSize = 14.5f
+                setTextColor(ContextCompat.getColor(ctx, R.color.focusdu_ink))
+                setTypeface(typeface, android.graphics.Typeface.BOLD)
+            }
+            val body = TextView(ctx).apply {
+                text = sec.lines.joinToString("\n") { "· $it" }
+                textSize = 13f
+                setTextColor(ContextCompat.getColor(ctx, R.color.focusdu_ink_secondary))
+                setLineSpacing(6f, 1f)
+            }
+            card.addView(title)
+            card.addView(body)
             binding.pageBody.addView(card)
         }
     }

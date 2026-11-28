@@ -1,11 +1,17 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <!-- 单 Activity + Fragment：全局深浅色自适应， toolbar 由页面自行处理 -->
+    <!-- UI 改版（feature/ui-refresh）：轻量浅色工具栏 + 状态栏同底色，卡片化界面 -->
     <style name="Theme.FocusDu" parent="Theme.Material3.DayNight.NoActionBar">
         <item name="colorPrimary">@color/focusdu_primary</item>
         <item name="colorPrimaryDark">@color/focusdu_primary_dark</item>
         <item name="colorOnPrimary">@color/focusdu_on_primary</item>
-        <item name="android:statusBarColor">@color/focusdu_primary_dark</item>
+        <item name="colorPrimaryContainer">@color/focusdu_primary_tint</item>
+        <item name="colorOnPrimaryContainer">@color/focusdu_primary_dark</item>
+        <item name="colorSurface">@color/focusdu_card</item>
+        <item name="colorOutline">@color/focusdu_card_stroke</item>
+        <item name="android:statusBarColor">@color/focusdu_surface</item>
+        <item name="android:windowLightStatusBar">true</item>
         <item name="android:windowBackground">@color/focusdu_surface</item>
     </style>
 </resources>

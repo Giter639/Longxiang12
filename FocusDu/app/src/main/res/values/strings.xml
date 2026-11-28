@@ -231,4 +231,34 @@
     <string name="p15_status_reconnecting">与 %1$s 断开，自动重连中（第 %2$d 次）…</string>
     <string name="p15_status_disconnected">与 %1$s 断开且重连失败：点「开始扫描」手动重连</string>
     <string name="p15_status_error">错误：%1$s</string>
+
+    <!-- ============================================================
+         X28 UI 改版新增文案：P05 产品首页 + P06 模式选择
+         ============================================================ -->
+    <string name="p05_metric_rounds">今日轮次</string>
+    <string name="p05_metric_focus">累计专注(分)</string>
+    <string name="p05_metric_risk">平均风险率</string>
+    <string name="p05_cta_start_focus">开始专注</string>
+    <string name="p05_cta_monitor">实时状态</string>
+    <string name="p05_cta_calibration">坐姿校准</string>
+    <string name="p05_section_entries">快捷入口</string>
+    <string name="p05_entry_positioning">机位引导</string>
+    <string name="p05_entry_reminders">提醒中心</string>
+    <string name="p05_entry_guard">专注守护</string>
+    <string name="p05_entry_persona">人格设置</string>
+    <string name="p05_entry_trend">历史趋势</string>
+    <string name="p05_entry_compare">前后对比</string>
+    <string name="p05_entry_guide">欢迎引导</string>
+    <string name="p05_entry_imu">设备绑定</string>
+    <string name="p05_status_idle">当前没有进行中的番茄轮，点「开始专注」出发</string>
+    <string name="p05_status_focus">第 %1$d 轮专注中 · 剩余 %2$d 秒</string>
+    <string name="p05_status_paused">第 %1$d 轮已暂停 · 已专注 %2$d 秒</string>
+    <string name="p05_status_break">休息中 · 剩余 %1$d 秒</string>
+    <string name="p05_status_finished">本轮完成 · 报告已生成</string>
+
+    <string name="p06_mode_standard">标准 25/5</string>
+    <string name="p06_mode_deep">深度 50/10</string>
+    <string name="p06_mode_health">健康优先</string>
+    <string name="p06_pause">暂停</string>
+    <string name="p06_give_up">放弃本轮 / 跳过休息</string>
 </resources>
