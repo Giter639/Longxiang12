@@ -14,12 +14,14 @@
         android:orientation="vertical"
         android:padding="@dimen/page_padding">
 
+        <!-- 页名由工具栏显示（X29 修复：此前 toolbar 与此处的 page_title 重复出现两次） -->
         <TextView
             android:id="@+id/page_title"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:textSize="24sp"
             android:textStyle="bold"
+            android:visibility="gone"
             android:textColor="@color/focusdu_ink" />
 
         <TextView
