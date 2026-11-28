@@ -1,6 +1,8 @@
 package com.focusdu.app.ui.pages
 
 import android.widget.CheckBox
+import android.widget.LinearLayout
+import androidx.core.content.ContextCompat
 import androidx.lifecycle.lifecycleScope
 import com.focusdu.app.R
 import com.focusdu.app.guard.GuardPermission
@@ -27,8 +29,10 @@ class P10GuardInterceptPage : BasePageFragment() {
     private val checkboxes = mutableMapOf<String, CheckBox>()
     private var appsLoaded = false
     private var permissionSummary = ""
+    private lateinit var appsCard: LinearLayout
 
     override fun onPageReady(view: android.view.View) {
+        appsCard = addCard(getString(R.string.p10_apps_section))
         addButton(getString(R.string.p10_open_overlay_permission)) {
             runCatching {
                 startActivity(
@@ -84,7 +88,7 @@ class P10GuardInterceptPage : BasePageFragment() {
                 }
             }
             checkboxes[app.packageName] = checkBox
-            binding.pageBody.addView(checkBox)
+            appsCard.addView(checkBox)
         }
         if (apps.isEmpty()) {
             binding.pageStatus.text = getString(R.string.p10_no_apps)
@@ -134,6 +138,7 @@ class P11PersonaThemePage : BasePageFragment() {
     private val personaButtons = mutableMapOf<ReminderPersona, MaterialButton>()
 
     override fun onPageReady(view: android.view.View) {
+        addSectionLabel(getString(R.string.p11_section_persona))
         ReminderPersona.entries.forEach { persona ->
             val button = addButton(personaLabel(persona)) {
                 vm.setReminderPersona(persona)
@@ -145,10 +150,13 @@ class P11PersonaThemePage : BasePageFragment() {
         viewLifecycleOwner.lifecycleScope.launch {
             vm.reminderPersona.collect { selected ->
                 personaButtons.forEach { (persona, button) ->
-                    button.setBackgroundColor(
-                        if (persona == selected) 0xFFDCEEE8.toInt()
-                        else android.graphics.Color.TRANSPARENT
-                    )
+                    if (persona == selected) {
+                        button.backgroundTintList = ContextCompat.getColorStateList(requireContext(), R.color.focusdu_primary)
+                        button.setTextColor(ContextCompat.getColor(requireContext(), R.color.focusdu_on_primary))
+                    } else {
+                        button.backgroundTintList = ContextCompat.getColorStateList(requireContext(), R.color.focusdu_primary_tint)
+                        button.setTextColor(ContextCompat.getColor(requireContext(), R.color.focusdu_primary_dark))
+                    }
                 }
                 binding.pageStatus.text = getString(
                     R.string.persona_selected_summary,

@@ -11,6 +11,7 @@ import com.focusdu.app.pomodoro.PomodoroMode
 import com.focusdu.app.reminder.ReminderAction
 import com.focusdu.app.reminder.ReminderMessageResolver
 import com.focusdu.app.reminder.ReminderPersona
+import com.focusdu.app.imu.ble.BleImuEngine
 import com.focusdu.app.ui.common.BasePageFragment
 import com.focusdu.app.ui.common.RingCountdownView
 import com.focusdu.app.ui.common.TrendLineChart
@@ -129,6 +130,47 @@ class P07VisionMonitorPage : BasePageFragment() {
                 Triple(ui, camera, vm.visionMode)
             }.collect { (ui, camera, mode) ->
                 binding.pageStatus.text = statusText(ui, camera, mode)
+            }
+        }
+
+        // X26：IMU 通道状态卡（观测用，不进埋点；连接状态 + 实时判定）
+        val imuCard = addCard(getString(R.string.p07_imu_section))
+        val imuConn = TextView(requireContext()).apply {
+            textSize = 13f
+            setTextColor(ContextCompat.getColor(requireContext(), R.color.focusdu_ink_secondary))
+        }
+        val imuState = TextView(requireContext()).apply {
+            textSize = 13f
+            setTextColor(ContextCompat.getColor(requireContext(), R.color.focusdu_ink_secondary))
+        }
+        imuCard.addView(imuConn)
+        imuCard.addView(imuState)
+
+        viewLifecycleOwner.lifecycleScope.launch {
+            vm.imuEngineStatus?.collect { st ->
+                val conn = when (st) {
+                    is BleImuEngine.Status.Connected -> getString(R.string.p07_imu_conn_connected, st.deviceName)
+                    is BleImuEngine.Status.Reconnecting -> getString(R.string.p07_imu_conn_reconnecting)
+                    is BleImuEngine.Status.Connecting, is BleImuEngine.Status.Scanning ->
+                        getString(R.string.p07_imu_conn_pending)
+                    is BleImuEngine.Status.NeedsPermission -> getString(R.string.p07_imu_conn_permission)
+                    else -> getString(R.string.p07_imu_conn_off)
+                }
+                imuConn.text = getString(R.string.p07_imu_conn_fmt, conn) +
+                    "　·　" + getString(R.string.p07_imu_mode_fmt, vm.modeLabelForImu())
+            }
+        }
+        viewLifecycleOwner.lifecycleScope.launch {
+            vm.imuUi.collect { u ->
+                imuState.text = getString(
+                    R.string.p07_imu_state_fmt,
+                    when (u) {
+                        is StateStreamDebouncer.UiState.Live -> u.stateLabel
+                        is StateStreamDebouncer.UiState.Interrupted ->
+                            getString(R.string.p07_imu_state_interrupted)
+                        StateStreamDebouncer.UiState.Idle -> getString(R.string.p07_imu_state_idle)
+                    },
+                )
             }
         }
     }
