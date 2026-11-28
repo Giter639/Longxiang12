@@ -10,10 +10,13 @@ import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.viewModelScope
 import com.focusdu.app.AppContainer
 import com.focusdu.app.FocusDuApp
+import com.focusdu.app.R
 import com.focusdu.app.data.db.ReportEntity
 import com.focusdu.app.guard.GuardPermission
 import com.focusdu.app.guard.GuardPermissionSnapshot
 import com.focusdu.app.guard.LaunchableApp
+import com.focusdu.app.imu.ImuEngineMode
+import com.focusdu.app.imu.ble.BleImuEngine
 import com.focusdu.app.pomodoro.PomodoroMode
 import com.focusdu.app.pomodoro.PomodoroService
 import com.focusdu.app.reminder.RiskType
@@ -46,6 +49,9 @@ class AppSessionViewModel(private val container: AppContainer) : ViewModel() {
     val pomodoro = container.pomodoroEngine.state
     val visionUi = container.debouncer.ui
     val imuUi = container.imuDebouncer.ui   // X22 IMU 状态流（P07 IMU 小窗/调试用，UI 接入在 X23/X24）
+    val imuMode: ImuEngineMode = container.imuMode   // X23 引擎模式（P15 绑定页标注，不伪装真数据）
+    val imuEngineStatus: StateFlow<BleImuEngine.Status>? =
+        (container.imuEngine as? BleImuEngine)?.status
     val reminders = container.reminderEngine.decisions
     val cameraStatus = container.cameraStreamer.status
     val visionMode: VisionEngineMode = container.visionMode
@@ -82,6 +88,22 @@ class AppSessionViewModel(private val container: AppContainer) : ViewModel() {
             ReminderMessageResolver.resourceId(event, reminderPersona.value)
         )
     fun drainDeferredForRest() = container.reminderEngine.drainDeferredForRest()
+
+    // ---- IMU 设备绑定（X23） ----
+    fun imuRequiredPermissions(): List<String> =
+        (container.imuEngine as? BleImuEngine)?.requiredPermissions() ?: emptyList()
+
+    fun imuRetryConnection() = (container.imuEngine as? BleImuEngine)?.retryConnection()
+
+    fun imuDisconnect() = (container.imuEngine as? BleImuEngine)?.disconnect()
+
+    fun modeLabelForImu(): String = container.appContext.getString(
+        when (imuMode) {
+            ImuEngineMode.BLE -> R.string.p15_mode_ble
+            ImuEngineMode.MOCK_FALLBACK -> R.string.p15_mode_mock_fallback
+            ImuEngineMode.MOCK -> R.string.p15_mode_mock
+        },
+    )
 
     // ---- 休息恢复校验（T3-04） ----
     fun restCheck() = container.restValidator.lastCheck()

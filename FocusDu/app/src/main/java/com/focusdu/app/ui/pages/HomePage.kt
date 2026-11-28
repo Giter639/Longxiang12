@@ -30,6 +30,7 @@ class P05HomePage : BasePageFragment() {
             "P12 本轮报告" to R.id.p12RoundReportPage,
             "P13 历史趋势" to R.id.p13HistoryTrendPage,
             "P14 前后对比" to R.id.p14ComparisonPage,
+            "P15 设备绑定" to R.id.p15ImuBindingPage,
         )
         entries.forEach { (label, id) -> addButton(label) { navigateTo(id) } }
 

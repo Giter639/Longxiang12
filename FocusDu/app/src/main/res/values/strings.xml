@@ -210,4 +210,25 @@
 
     <!-- 占位提示（骨架期展示，各负责人实现后替换） -->
     <string name="tpl_todo_prefix">本页为骨架模板，</string>
+
+    <!-- ============================================================
+         X23 IMU 设备绑定页（P15）：权限/扫描/连接状态
+         ============================================================ -->
+    <string name="p15_title">IMU 设备绑定</string>
+    <string name="p15_request_permission">授予蓝牙权限</string>
+    <string name="p15_rescan">开始扫描 / 重新连接</string>
+    <string name="p15_disconnect">断开连接</string>
+    <string name="p15_mode_fmt">引擎模式：%1$s</string>
+    <string name="p15_mode_ble">蓝牙真引擎</string>
+    <string name="p15_mode_mock_fallback">Mock 回退（本机无蓝牙）</string>
+    <string name="p15_mode_mock">Mock</string>
+    <string name="p15_status_idle">未连接。点「开始扫描」发现并连接 FocusDu-IMU</string>
+    <string name="p15_status_needs_permission">需要蓝牙权限才能扫描：点「授予蓝牙权限」授权后自动重连</string>
+    <string name="p15_status_scanning">正在扫描 FocusDu-IMU（按服务 UUID 过滤）…</string>
+    <string name="p15_status_scan_timeout">15 秒内未发现设备：请确认固件已烧录且设备已上电，再点「开始扫描」</string>
+    <string name="p15_status_connecting">正在连接 %1$s …</string>
+    <string name="p15_status_connected">已连接 %1$s，25Hz 数据帧接收中</string>
+    <string name="p15_status_reconnecting">与 %1$s 断开，自动重连中（第 %2$d 次）…</string>
+    <string name="p15_status_disconnected">与 %1$s 断开且重连失败：点「开始扫描」手动重连</string>
+    <string name="p15_status_error">错误：%1$s</string>
 </resources>
