@@ -69,4 +69,10 @@
         android:id="@+id/p14ComparisonPage"
         android:name="com.focusdu.app.ui.pages.P14ComparisonPage"
         android:label="@string/p14_title" />
+
+    <!-- P15 IMU 设备绑定（X23）：BLE 取流连接管理 -->
+    <fragment
+        android:id="@+id/p15ImuBindingPage"
+        android:name="com.focusdu.app.ui.pages.P15ImuBindingPage"
+        android:label="@string/p15_title" />
 </navigation>
