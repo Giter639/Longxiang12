@@ -68,6 +68,8 @@ wb.save("任务卡.xlsx")
 - **MediaPipeVisionEngine 已是默认绑定**；`AppContainer` 保留一行切换 Mock 的注释入口；
 - 真机联调时：验证 `setBaseline` 注入、真机标定 `FaceFeatureMapper` 的 PITCH/YAW/FORWARD 符号常量，并补齐精度报告；
 - ⚠️ 肩线检测降级：FaceLandmarker 无肩部关键点，`shoulderTiltDeg` 恒 0，T2-02 肩线子项待 MediaPipe Pose 增强；
+- ✅ 已完成（X24/X26）：`imu/ImuStateClassifier`（IMU 规则状态机，五态判定）+ `imu/VisionImuArbiter`（视觉×IMU 主备切换仲裁）——
+  双源经仲裁输出单一状态流喂 StateStreamDebouncer，埋点/提醒无双计；视觉断流/遮挡时 IMU 兜底（规则与参数见 docs/接口协议IMU-v0.md 第 6/8 节）；
 - 算法事件源（PostureDetector.activeEvent / SittingMonitor.sedentaryEvent）就绪后，用事件流替换 `reminder/RiskEventWire.kt`（当前是骨架演示接线）。
 
 **R2（需求/质量）**：
