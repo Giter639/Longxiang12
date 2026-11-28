@@ -16,6 +16,7 @@ import com.focusdu.app.imu.ImuEngineFactory
 import com.focusdu.app.imu.ImuEngineMode
 import com.focusdu.app.imu.ImuVisionBridge
 import com.focusdu.app.imu.MockImuEngine
+import com.focusdu.app.imu.VisionImuArbiter
 import com.focusdu.app.imu.ble.BleImuEngine
 import com.focusdu.app.perf.DevicePerformanceMonitor
 import com.focusdu.app.pomodoro.PomodoroEngine
@@ -125,6 +126,9 @@ class AppContainer(context: Context) {
     val imuEngine: ImuEngine = imuBinding.engine
     val imuMode: ImuEngineMode = imuBinding.mode
     val imuDebouncer = StateStreamDebouncer(appScope, clock)
+    // X26 融合仲裁（主备切换）：视觉为主源、断流/遮挡时 IMU 兜底，规则见 VisionImuArbiter；
+    // 仲裁后单一状态流喂既有 debouncer 管线，埋点/提醒无双计（下游零改动）
+    val stateArbiter = VisionImuArbiter(clock)
     val baselineStore = BaselineStore(db)
     val reportGenerator = ReportGenerator(db, tracker, clock, cleaner)
 
@@ -148,9 +152,12 @@ class AppContainer(context: Context) {
             pomodoroEngine.state.map { it.phase }.distinctUntilChanged()
                 .collect { sessionCamera.setSessionWanted(SessionCameraGate.sessionNeedsCamera(it)) }
         }
-        appScope.launch { visionEngine.samples().collect { debouncer.onSample(it) } }
-        appScope.launch { visionEngine.samples().collect { sampleRecorder.onSample(it) } }   // 采样落盘
-        // X22：IMU 样本 → 六态映射桥 → 独立防抖通道（X24/X26 决定是否并入主链）
+        // X26：双源进仲裁器，仲裁后的单一状态流驱动主防抖 → 埋点/提醒/休息校验照常工作
+        appScope.launch { visionEngine.samples().collect { stateArbiter.onVisionSample(it) } }
+        appScope.launch { visionEngine.samples().collect { sampleRecorder.onSample(it) } }   // 采样落盘（只记真实视觉样本）
+        appScope.launch { imuEngine.samples().collect { stateArbiter.onImuSample(it) } }
+        appScope.launch { stateArbiter.arbitrated.collect { debouncer.onSample(it) } }
+        // X22：IMU 样本 → 六态映射桥 → 独立观测通道（imuUi 调试/后续 P07 IMU 小窗，不进埋点）
         appScope.launch {
             imuEngine.samples().map { ImuVisionBridge.toVisionSample(it) }
                 .collect { imuDebouncer.onSample(it) }

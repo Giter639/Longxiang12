@@ -46,7 +46,9 @@ jobs:
         run: |
           chmod +x FocusDu/gradlew
           cd FocusDu
-          ./gradlew :app:assembleDebug :app:assembleRelease :app:testDebugUnitTest --no-daemon
+          # 依赖解析偶发 429/网络抖动（main 上 #29 合并后 lintVital 曾因此失败）：失败自动重试一次
+          ./gradlew :app:assembleDebug :app:assembleRelease :app:testDebugUnitTest --no-daemon || \
+            ./gradlew :app:assembleDebug :app:assembleRelease :app:testDebugUnitTest --no-daemon
 
       # 打包产物：单测全过才上传，任何人都能在 Actions 页面下载真机测试
       # 发队友一律用 app-release.apk（release 签名可覆盖安装）；app-debug.apk 仅供本机调试比对
